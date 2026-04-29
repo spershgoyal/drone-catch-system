@@ -1,0 +1,65 @@
+{
+  "detector": {
+    "camera_index": 0,
+    "camera_source": "http://192.168.4.1:81/stream",
+    "frame_width": 640,
+    "frame_height": 480,
+    "value_max": 55,
+    "saturation_max": 255,
+    "min_area": 1200,
+    "morph_kernel": 5,
+    "blur_kernel": 5,
+    "black_ratio_threshold": 0.01,
+    "show_mask": true,
+    "draw_boxes": true
+  },
+  "camera": {
+    "frame_width": 640,
+    "frame_height": 480,
+    "horizontal_fov_deg": 66.0,
+    "position_m": [0.0, 0.0, 0.0]
+  },
+  "anchors": [
+    {
+      "anchor_id": "arm_main",
+      "address": "REYAX001",
+      "serial_port": "/dev/ttyUSB0",
+      "position_m": [0.0, 0.0, 0.0],
+      "poll_interval_s": 0.08,
+      "enabled": true
+    },
+    {
+      "anchor_id": "left_fix",
+      "address": "REYAX002",
+      "serial_port": "/dev/ttyUSB1",
+      "position_m": [-0.35, 0.0, 0.0],
+      "poll_interval_s": 0.12,
+      "enabled": false
+    },
+    {
+      "anchor_id": "rightfix",
+      "address": "REYAX003",
+      "serial_port": "/dev/ttyUSB2",
+      "position_m": [0.35, 0.0, 0.0],
+      "poll_interval_s": 0.12,
+      "enabled": false
+    }
+  ],
+  "drone_tag": {
+    "address": "DRONE001"
+  },
+  "gripper_position_m": [0.0, 0.0, 0.25],
+  "capture_radius_m": 0.15,
+  "smoothing_alpha": 0.35,
+  "vision_weight": 2.0,
+  "range_weight": 1.0,
+  "serial_baud_rate": 115200,
+  "uwb_channel": 5,
+  "uwb_bandwidth": 1,
+  "uwb_network_id": "REYAX123",
+  "uwb_password": "00000000000000000000000000000000",
+  "anchor_poll_payload": "PING",
+  "anchor_response_timeout_s": 0.15,
+  "auto_configure_anchors": true,
+  "enable_rssi": false
+}

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "black-webcam-detector"
+version = "0.1.0"
+description = "Standalone webcam detector for finding black regions in live video."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26.0",
+  "opencv-python>=4.9.0",
+  "pyserial>=3.5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+black-vision = "black_vision.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["black_vision*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

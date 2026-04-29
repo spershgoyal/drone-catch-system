@@ -1,0 +1,3677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ARM-01 / GROUND CONTROL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================================
+   ARM-01 GROUND CONTROL — design: swiss/grid base + military accents
+   palette: bone white, ink black, hazard orange, graph paper grey
+   ========================================================================= */
+:root {
+  --paper:        #f4f1e8;
+  --paper-2:      #ebe7da;
+  --paper-line:   #d4cfbe;
+  --ink:          #0a0a0a;
+  --ink-2:        #1a1a1a;
+  --ink-soft:     #2c2c2c;
+  --grey-1:       #6b6b6b;
+  --grey-2:       #9a9a9a;
+  --grey-3:       #c2c0b6;
+  --hazard:       #ff5722;
+  --hazard-2:     #d94317;
+  --signal:       #2e7d32;
+  --signal-2:     #1b5e20;
+  --warn:         #ffa000;
+  --plot:         #1565c0;
+  --grid-line:    rgba(10,10,10,0.06);
+  --hairline:     rgba(10,10,10,0.12);
+  --hairline-strong: rgba(10,10,10,0.25);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; overflow: hidden; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-feature-settings: "ss01", "ss02"; }
+.display { font-family: 'Space Grotesk', sans-serif; font-weight: 700; letter-spacing: -0.01em; }
+.label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--grey-1);
+  text-transform: uppercase;
+}
+.label-strong { color: var(--ink); }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* hazard stripes used sparingly for warnings/limits */
+.hazard-stripe {
+  background: repeating-linear-gradient(45deg,
+    var(--hazard) 0 8px, var(--ink) 8px 16px);
+}
+.hazard-stripe-thin {
+  background: repeating-linear-gradient(45deg,
+    rgba(255,87,34,0.5) 0 4px, transparent 4px 8px);
+}
+
+/* panels: white on paper-with-grid */
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  position: relative;
+}
+.panel-section { padding: 14px 16px; border-bottom: 1px solid var(--hairline); }
+.panel-section:last-child { border-bottom: 0; }
+
+/* corner reg marks (military-spec touch) */
+.regmark {
+  position: absolute; width: 6px; height: 6px; border: 1px solid var(--ink); pointer-events: none;
+}
+.regmark.tl { top: 4px; left: 4px; border-right: 0; border-bottom: 0; }
+.regmark.tr { top: 4px; right: 4px; border-left: 0; border-bottom: 0; }
+.regmark.bl { bottom: 4px; left: 4px; border-right: 0; border-top: 0; }
+.regmark.br { bottom: 4px; right: 4px; border-left: 0; border-top: 0; }
+
+/* buttons */
+button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 7px 11px;
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease;
+  position: relative;
+}
+button:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+button:active:not(:disabled) { background: var(--ink-2); transform: translateY(0.5px); }
+button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+button.primary { background: var(--ink); color: var(--paper); }
+button.primary:hover:not(:disabled) { background: var(--ink-soft); }
+
+button.active {
+  background: var(--ink);
+  color: var(--paper);
+  position: relative;
+}
+button.active::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--hazard);
+}
+
+button.hazard {
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--hazard);
+  font-weight: 700;
+  position: relative;
+  padding: 9px 13px;
+}
+button.hazard::before {
+  content: '';
+  position: absolute; left: -2px; right: -2px; top: -2px; bottom: -2px;
+  background: repeating-linear-gradient(45deg,
+    transparent 0 6px, rgba(255,87,34,0.15) 6px 12px);
+  pointer-events: none;
+}
+button.hazard:hover:not(:disabled) {
+  background: var(--hazard); color: var(--paper);
+}
+button.signal { color: var(--signal-2); border-color: var(--signal-2); }
+button.signal:hover:not(:disabled) { background: var(--signal-2); color: var(--paper); }
+
+input, select, textarea {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 7px 9px;
+  width: 100%;
+  outline: none;
+}
+input:focus { background: #fff; box-shadow: inset 0 0 0 2px var(--ink); }
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; background: transparent; padding: 0; border: 0; height: 22px;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px; background: var(--ink);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 12px; height: 18px; background: var(--hazard);
+  border: 1px solid var(--ink); border-radius: 0; margin-top: -8px;
+}
+
+/* axis sliders */
+.axis-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 32px;
+  background: transparent; padding: 0; border: 0; cursor: pointer;
+}
+.axis-slider::-webkit-slider-runnable-track {
+  height: 6px; background: var(--paper-2); border: 1px solid var(--ink);
+}
+.axis-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 24px;
+  background: var(--thumb, var(--hazard));
+  border: 1px solid var(--ink); border-radius: 0;
+  margin-top: -10px;
+  cursor: grab;
+}
+.axis-slider:active::-webkit-slider-thumb { cursor: grabbing; }
+.axis-slider.x { --thumb: #d32f2f; }
+.axis-slider.y { --thumb: #2e7d32; }
+.axis-slider.z { --thumb: #1565c0; }
+
+/* scrollbar */
+.scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+.scrollbar::-webkit-scrollbar-track { background: var(--paper-2); }
+.scrollbar::-webkit-scrollbar-thumb { background: var(--ink); border: 2px solid var(--paper-2); }
+
+/* readouts */
+.readout-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--ink);
+}
+.readout-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 3px 0;
+}
+
+/* telemetry bars */
+.tbar {
+  position: relative;
+  height: 12px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+.tbar .fill {
+  position: absolute; top: 0; bottom: 0;
+  background: var(--ink);
+  transition: width 0.1s linear, left 0.1s linear;
+}
+.tbar .forbid {
+  position: absolute; top: 0; bottom: 0;
+  background: repeating-linear-gradient(45deg,
+    rgba(255,87,34,0.7) 0 3px, transparent 3px 6px);
+  border-left: 1px solid var(--hazard);
+  border-right: 1px solid var(--hazard);
+  pointer-events: none;
+}
+.tbar .center {
+  position: absolute; top: -2px; bottom: -2px;
+  width: 1px; background: var(--ink); left: 50%;
+}
+.tbar .target {
+  position: absolute; top: -3px; bottom: -3px;
+  width: 2px; background: var(--hazard);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+/* chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 8px;
+  border: 1px solid var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--paper);
+  height: 26px;
+}
+.chip.dark { background: var(--ink); color: var(--paper); }
+.chip.signal { background: var(--signal-2); color: var(--paper); border-color: var(--signal-2); }
+.chip.warn { background: var(--warn); color: var(--ink); border-color: var(--ink); }
+
+/* status dot */
+.dot {
+  width: 8px; height: 8px;
+  border: 1px solid currentColor;
+}
+.dot.solid { background: currentColor; }
+
+/* keyboard hint */
+.kbd {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  min-width: 18px; text-align: center;
+}
+
+/* tabs */
+.tab {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  border: 0;
+  border-right: 1px solid var(--ink);
+  background: var(--paper);
+  cursor: pointer;
+  color: var(--grey-1);
+  position: relative;
+  height: 100%;
+}
+.tab:hover { color: var(--ink); }
+.tab.active {
+  color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.tab.active::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: var(--hazard);
+}
+
+/* big section header */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--ink);
+  color: var(--paper);
+}
+.section-head .num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--hazard);
+  margin-right: 10px;
+  letter-spacing: 0.1em;
+}
+.section-head .title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* terminal */
+.terminal-line { white-space: pre-wrap; padding: 1px 0; }
+
+/* animations */
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.blink { animation: blink 1s steps(2, start) infinite; }
+.pulse { animation: pulse-dot 1.5s ease-in-out infinite; }
+
+@keyframes scroll-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.scan-bar {
+  position: absolute; top: 0; left: 0; height: 2px; width: 25%;
+  background: var(--hazard);
+  animation: scroll-bar 3s linear infinite;
+}
+
+/* "framed" data label like nautical/aviation gauges */
+.frame {
+  border: 1px solid var(--ink);
+  padding: 8px 10px;
+  position: relative;
+}
+.frame .frame-label {
+  position: absolute;
+  top: -7px; left: 8px;
+  background: var(--paper);
+  padding: 0 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-1);
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.9/babel.min.js" crossorigin></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ============================================================================
+// CONSTANTS (must match firmware)
+// ============================================================================
+const L1 = 13.75, L2 = 17.0, SHLD_OFF = 3.0;
+const REACH = L1 + L2;
+const JOINT_MIN = { b: -180, s: -80, e: -110 };
+const JOINT_MAX = { b: 180, s: 80, e: 110 };
+const SHLD_FORBID = [-10, 10];
+const Z_FLOOR = 0;
+
+const MODE_NAMES = ["MANUAL","DEBUG","HEIGHT","XYZ","DANCE","TILT"];
+const DANCE_NAMES = ["showcase","greet","idle","combat","chase"];
+
+// ============================================================================
+// CAM TRACKING (single ESP32-CAM, mounted right of base, pointing up)
+// ============================================================================
+// Cam is 15" right of the arm base, USB port faces the arm (so USB is on the
+// -X side of the cam body). Lens points STRAIGHT UP at the catch zone.
+// Cam height = base level (which is 2.5" below shoulder joint).
+//
+// Sensor image axes (cam +X / +Y) don't necessarily line up with world axes.
+// Without testing on the actual hardware we can't know which way the sensor
+// is oriented, so we expose runtime knobs:
+//   - rotation (0 / 90 / 180 / 270) around lens axis
+//   - flipH (mirror image X)
+//   - flipV (mirror image Y)
+// User adjusts via UI and calibrates by moving the marker around.
+//
+// The "physical" mounting (cam at +X from arm, USB facing arm) is fixed and
+// drawn in 3D. The image-axis remap is just how the sensor's pixels map to
+// the physical world.
+const CAM_WORLD = { x: 15.0, y: 0.0, z: SHLD_OFF - 2.5 };  // inches
+const MM_TO_IN  = 1.0 / 25.4;
+const CAM_FOV_DEG = 66;        // OV2640 stock lens, horizontal
+const CAM_FOV_HEIGHT = 36;     // how tall to draw the wireframe FOV cone (in)
+const TRAIL_MAX = 40;
+const TRAIL_MAX_AGE_MS = 2000;
+
+// Apply the image-axis remap (rotation + optional flips) to a cam-frame point.
+// Returns rotated (x, y, z) in cam frame; z is unchanged (lens axis).
+function remapCamAxes(cx, cy, cz, rotation, flipH, flipV) {
+  let x = flipH ? -cx : cx;
+  let y = flipV ? -cy : cy;
+  let X, Y;
+  switch (rotation) {
+    case 90:  X = -y; Y =  x; break;
+    case 180: X = -x; Y = -y; break;
+    case 270: X =  y; Y = -x; break;
+    default:  X =  x; Y =  y; break;  // 0
+  }
+  return { x: X, y: Y, z: cz };
+}
+
+function camFrameToWorld(cx_in, cy_in, cz_in, opts) {
+  const o = opts || {};
+  const r = remapCamAxes(cx_in, cy_in, cz_in, o.rotation || 0, !!o.flipH, !!o.flipV);
+  return {
+    x: CAM_WORLD.x + r.x,
+    y: CAM_WORLD.y + r.y,
+    z: CAM_WORLD.z + r.z + (o.zOffset || 0),
+  };
+}
+
+// ============================================================================
+// IK / FK
+// ============================================================================
+function fk(bDeg, sDeg, eDeg) {
+  const b = bDeg * Math.PI / 180;
+  const s = sDeg * Math.PI / 180;
+  const e = eDeg * Math.PI / 180;
+  const r = -L1 * Math.sin(s) + L2 * Math.sin(e - s);
+  const z = L1 * Math.cos(s) + L2 * Math.cos(e - s) + SHLD_OFF;
+  return { x: r * Math.cos(b), y: r * Math.sin(b), z };
+}
+
+function ik(x, y, z) {
+  if (z < Z_FLOOR) return { ok: false, err: 'below floor' };
+  const zShld = z - SHLD_OFF;
+  const r = Math.sqrt(x*x + y*y);
+  const d = Math.sqrt(r*r + zShld*zShld);
+  if (d > REACH + 0.01) return { ok: false, err: 'too far' };
+  if (d < Math.abs(L1 - L2) - 0.01) return { ok: false, err: 'too close' };
+  const cosE = (d*d - L1*L1 - L2*L2) / (2 * L1 * L2);
+  if (Math.abs(cosE) > 1) return { ok: false, err: 'no solution' };
+  const baseDeg = Math.atan2(y, x) * 180 / Math.PI;
+  const sols = [];
+  for (const pos of [true, false]) {
+    let e = Math.acos(cosE);
+    if (!pos) e = -e;
+    const A = L2 * Math.sin(e);
+    const B = -L1 - L2 * Math.cos(e);
+    const sDeg = Math.atan2(B * r + A * zShld, A * r - B * zShld) * 180 / Math.PI;
+    const eDeg = e * 180 / Math.PI;
+    let cost = 0;
+    if (sDeg > JOINT_MAX.s) cost += 100 * (sDeg - JOINT_MAX.s);
+    if (sDeg < JOINT_MIN.s) cost += 100 * (JOINT_MIN.s - sDeg);
+    if (eDeg > JOINT_MAX.e) cost += 100 * (eDeg - JOINT_MAX.e);
+    if (eDeg < JOINT_MIN.e) cost += 100 * (JOINT_MIN.e - eDeg);
+    if (sDeg > SHLD_FORBID[0] && sDeg < SHLD_FORBID[1]) cost += 50;
+    sols.push({ sDeg, eDeg, cost });
+  }
+  sols.sort((a, b) => a.cost - b.cost);
+  const best = sols[0];
+  if (Math.abs(best.sDeg) > JOINT_MAX.s + 0.5) return { ok: false, err: 'shoulder oor' };
+  if (Math.abs(best.eDeg) > JOINT_MAX.e + 0.5) return { ok: false, err: 'elbow oor' };
+  return { ok: true, b: baseDeg, s: best.sDeg, e: best.eDeg, cost: best.cost };
+}
+
+// ============================================================================
+// 3D ARM (CAD-styled, matches user's actual arm)
+// ============================================================================
+function buildArm(opacity = 1.0) {
+  const root = new THREE.Group();
+
+  const matY = new THREE.MeshStandardMaterial({
+    color: 0xd4a017, roughness: 0.42, metalness: 0.20, transparent: opacity < 1, opacity
+  });
+  const matD = new THREE.MeshStandardMaterial({
+    color: 0x191b20, roughness: 0.55, metalness: 0.10, transparent: opacity < 1, opacity
+  });
+  const matR = new THREE.MeshStandardMaterial({
+    color: 0xa8322a, roughness: 0.45, metalness: 0.10, transparent: opacity < 1, opacity
+  });
+  const matSteel = new THREE.MeshStandardMaterial({
+    color: 0x9aa0a6, roughness: 0.30, metalness: 0.65, transparent: opacity < 1, opacity
+  });
+
+  // Base plate
+  const basePlate = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.9, 1.0, 48), matY);
+  basePlate.position.y = 0.5;
+  root.add(basePlate);
+  const basePlateInner = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 0.4, 48), matD);
+  basePlateInner.position.y = 1.1;
+  root.add(basePlateInner);
+
+  // Base rotation node (firmware base spins around vertical axis - three.js Y)
+  const baseRot = new THREE.Group();
+  baseRot.position.y = 1.3;
+  root.add(baseRot);
+
+  // Yoke (the dark center column with yellow side plates that holds shoulder)
+  const yokeH = SHLD_OFF;
+  const yokeCore = new THREE.Mesh(new THREE.BoxGeometry(2.4, yokeH, 2.8), matD);
+  yokeCore.position.y = yokeH / 2;
+  baseRot.add(yokeCore);
+  for (const sx of [-1, 1]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.4, yokeH * 1.05, 2.6), matY);
+    side.position.set(sx * 1.55, yokeH / 2, 0);
+    baseRot.add(side);
+  }
+  // shoulder pivot hub
+  const shldHub = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 3.4, 24), matD);
+  shldHub.rotation.x = Math.PI / 2;
+  shldHub.position.y = yokeH;
+  baseRot.add(shldHub);
+
+  // Shoulder pivot
+  const shldRot = new THREE.Group();
+  shldRot.position.y = SHLD_OFF;
+  baseRot.add(shldRot);
+
+  // Upper arm (L1)
+  const upGroup = new THREE.Group();
+  shldRot.add(upGroup);
+  const upCore = new THREE.Mesh(new THREE.BoxGeometry(1.5, L1 * 0.95, 3.0), matD);
+  upCore.position.y = L1 / 2;
+  upGroup.add(upCore);
+  for (const sx of [-1, 1]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.4, L1 * 0.92, 2.5), matY);
+    side.position.set(sx * 0.95, L1 / 2, 0);
+    upGroup.add(side);
+  }
+
+  // Elbow pivot
+  const elbRot = new THREE.Group();
+  elbRot.position.y = L1;
+  shldRot.add(elbRot);
+  const elbHub = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 3.0, 24), matD);
+  elbHub.rotation.x = Math.PI / 2;
+  elbRot.add(elbHub);
+
+  // Forearm (L2)
+  const feGroup = new THREE.Group();
+  elbRot.add(feGroup);
+  const feCore = new THREE.Mesh(new THREE.BoxGeometry(1.3, L2 * 0.95, 2.6), matD);
+  feCore.position.y = L2 / 2;
+  feGroup.add(feCore);
+  for (const sx of [-1, 1]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.35, L2 * 0.9, 2.2), matY);
+    side.position.set(sx * 0.85, L2 / 2, 0);
+    feGroup.add(side);
+  }
+
+  // Wrist tip - red block + steel disc
+  const tip = new THREE.Group();
+  tip.position.y = L2;
+  elbRot.add(tip);
+  const redBlock = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 1.6), matR);
+  redBlock.position.y = 1.1;
+  tip.add(redBlock);
+  const blackPlate = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.6, 2.0), matD);
+  blackPlate.position.y = 2.5;
+  tip.add(blackPlate);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.5, 32), matSteel);
+  disc.position.y = 3.2;
+  tip.add(disc);
+  const innerDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.55, 16), matD);
+  innerDisc.position.y = 3.2;
+  tip.add(innerDisc);
+
+  return {
+    root, baseRot, shldRot, elbRot, tip,
+    materials: [matY, matD, matR, matSteel],
+    setAngles(bDeg, sDeg, eDeg) {
+      baseRot.rotation.y = bDeg * Math.PI / 180;
+      shldRot.rotation.z = sDeg * Math.PI / 180;
+      elbRot.rotation.z = -eDeg * Math.PI / 180;
+    },
+    setOpacity(o) {
+      this.materials.forEach(m => { m.transparent = o < 1; m.opacity = o; m.needsUpdate = true; });
+    },
+  };
+}
+
+// ============================================================================
+// SCENE BUILDER (used for both single + multi view)
+// ============================================================================
+function buildScene(parentDiv, options = {}) {
+  const width = parentDiv.clientWidth;
+  const height = parentDiv.clientHeight;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf4f1e8);
+  scene.fog = new THREE.Fog(0xf4f1e8, 80, 180);
+
+  const camera = new THREE.PerspectiveCamera(38, width / height, 0.5, 500);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(width, height);
+  parentDiv.appendChild(renderer.domElement);
+
+  // light
+  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  const key = new THREE.DirectionalLight(0xfff0d0, 0.8);
+  key.position.set(40, 50, 30);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xc0d0ff, 0.3);
+  fill.position.set(-30, 20, -25);
+  scene.add(fill);
+
+  // graph paper ground
+  const groundGeo = new THREE.PlaneGeometry(120, 120);
+  const groundMat = new THREE.MeshBasicMaterial({ color: 0xebe7da });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.05;
+  scene.add(ground);
+  const grid = new THREE.GridHelper(120, 60, 0xc2c0b6, 0xd4cfbe);
+  scene.add(grid);
+  const gridFine = new THREE.GridHelper(120, 12, 0x9a9a9a, 0xc2c0b6);
+  gridFine.position.y = 0.01;
+  scene.add(gridFine);
+
+  // axes corner
+  const axes = new THREE.Group();
+  const mkA = (dir, color) => {
+    const g = new THREE.Group();
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.2, 8), new THREE.MeshBasicMaterial({color}));
+    cyl.position.y = 1.1; g.add(cyl);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.45, 8), new THREE.MeshBasicMaterial({color}));
+    cone.position.y = 2.45; g.add(cone);
+    if (dir === 'x') g.rotation.z = -Math.PI / 2;
+    if (dir === 'z') g.rotation.x = Math.PI / 2;
+    return g;
+  };
+  axes.add(mkA('x', 0xd32f2f));
+  axes.add(mkA('y', 0x2e7d32));
+  axes.add(mkA('z', 0x1565c0));
+  axes.position.set(-30, 0.1, -30);
+  scene.add(axes);
+
+  // arm + ghost + tip marker
+  const arm = buildArm(1.0);
+  scene.add(arm.root);
+  const ghost = buildArm(0.28);
+  ghost.root.visible = false;
+  scene.add(ghost.root);
+
+  const tipMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.7, 24, 24),
+    new THREE.MeshBasicMaterial({ color: 0xff5722 })
+  );
+  scene.add(tipMarker);
+  const tipMarkerOutline = new THREE.Mesh(
+    new THREE.SphereGeometry(0.85, 24, 24),
+    new THREE.MeshBasicMaterial({ color: 0x0a0a0a, wireframe: true, wireframeLinewidth: 1 })
+  );
+  scene.add(tipMarkerOutline);
+
+  const targetMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
+  );
+  targetMarker.visible = false;
+  scene.add(targetMarker);
+  // dashed verticle line from target to floor
+  const lineMat = new THREE.LineDashedMaterial({ color: 0x0a0a0a, dashSize: 0.5, gapSize: 0.3 });
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+  const targetLine = new THREE.Line(lineGeo, lineMat);
+  targetLine.computeLineDistances();
+  targetLine.visible = false;
+  scene.add(targetLine);
+
+  // Predicted catch path display
+  const pathPts = [];
+  const pathGeo = new THREE.BufferGeometry();
+  const pathMat = new THREE.LineBasicMaterial({ color: 0xff5722, linewidth: 2 });
+  const pathLine = new THREE.Line(pathGeo, pathMat);
+  scene.add(pathLine);
+
+  // workspace sphere
+  const wsGeo = new THREE.SphereGeometry(REACH, 32, 16);
+  const wsMat = new THREE.MeshBasicMaterial({ color: 0x1565c0, wireframe: true, opacity: 0.08, transparent: true });
+  const ws = new THREE.Mesh(wsGeo, wsMat);
+  ws.position.y = SHLD_OFF;
+  ws.visible = false;
+  scene.add(ws);
+
+  // ---------------------------------------------------------------------
+  // CAM MOUNT (small box+lens, sits right of base) — always visible
+  // World coords: (CAM_WORLD.x, CAM_WORLD.y, CAM_WORLD.z) inches
+  // Three.js mapping: scene_x=world_x, scene_y=world_z, scene_z=-world_y
+  // ---------------------------------------------------------------------
+  const camGroup = new THREE.Group();
+  const camBodyMat = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.7, metalness: 0.1 });
+  const camLensMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.4 });
+  const camPostMat = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.5, metalness: 0.3 });
+  const camUsbMat  = new THREE.MeshStandardMaterial({ color: 0xb0b0b0, roughness: 0.3, metalness: 0.7 });
+  // Body: ~1.5" cube
+  const camBody = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 1.4), camBodyMat);
+  camBody.position.y = CAM_WORLD.z + 0.5;
+  camGroup.add(camBody);
+  // Lens: short cylinder pointing UP
+  const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.4, 0.5, 16), camLensMat);
+  camLens.position.y = CAM_WORLD.z + 1.25;
+  camGroup.add(camLens);
+  // USB port nub on -X face (toward arm). Visual confirmation of orientation.
+  const camUsb = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.4, 0.55), camUsbMat);
+  camUsb.position.set(-0.93, CAM_WORLD.z + 0.4, 0);
+  camGroup.add(camUsb);
+  // Mount post down to ground
+  const camPostH = Math.max(0.1, CAM_WORLD.z);
+  if (camPostH > 0.05) {
+    const camPost = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, camPostH, 10), camPostMat);
+    camPost.position.y = camPostH / 2;
+    camGroup.add(camPost);
+  }
+  // Position the whole group at world (CAM_WORLD.x, _, -CAM_WORLD.y)
+  camGroup.position.set(CAM_WORLD.x, 0, -CAM_WORLD.y);
+  // Label hash above the cam: a small text-y crosshair
+  const camTickMat = new THREE.LineBasicMaterial({ color: 0x0a0a0a });
+  const camTickGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-0.6, CAM_WORLD.z + 1.7, 0),
+    new THREE.Vector3( 0.6, CAM_WORLD.z + 1.7, 0),
+    new THREE.Vector3(0, CAM_WORLD.z + 1.4, 0),
+    new THREE.Vector3(0, CAM_WORLD.z + 2.0, 0),
+  ]);
+  const camTick = new THREE.LineSegments(camTickGeo, camTickMat);
+  camGroup.add(camTick);
+  scene.add(camGroup);
+
+  // FOV cone wireframe pointing up from the cam
+  const fovHalfRad = (CAM_FOV_DEG * Math.PI / 180) / 2;
+  const fovRadius = CAM_FOV_HEIGHT * Math.tan(fovHalfRad);
+  const fovGeo = new THREE.ConeGeometry(fovRadius, CAM_FOV_HEIGHT, 24, 1, true);
+  const fovMat = new THREE.MeshBasicMaterial({ color: 0x1565c0, wireframe: true, opacity: 0.18, transparent: true });
+  const fovCone = new THREE.Mesh(fovGeo, fovMat);
+  // Cone in Three.js opens DOWN by default. Rotate to point UP. Apex at lens.
+  fovCone.rotation.x = Math.PI;
+  // Center of cone is at half-height up from apex; with rotation flipping it,
+  // center sits ABOVE the apex by half-height. Apex at lens top => center at
+  // (CAM_WORLD.z + 1.5) + CAM_FOV_HEIGHT/2.
+  fovCone.position.set(CAM_WORLD.x, CAM_WORLD.z + 1.5 + CAM_FOV_HEIGHT / 2, -CAM_WORLD.y);
+  fovCone.visible = false;
+  scene.add(fovCone);
+
+  // Drone marker: small sphere with a tiny "shadow" line down to floor
+  const droneGroup = new THREE.Group();
+  const droneSphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 18, 18),
+    new THREE.MeshBasicMaterial({ color: 0x1565c0 })
+  );
+  droneGroup.add(droneSphere);
+  const droneOutline = new THREE.Mesh(
+    new THREE.SphereGeometry(0.7, 18, 18),
+    new THREE.MeshBasicMaterial({ color: 0x0a0a0a, wireframe: true })
+  );
+  droneGroup.add(droneOutline);
+  // Drone shadow line (vertical to floor)
+  const droneShadowMat = new THREE.LineDashedMaterial({ color: 0x1565c0, dashSize: 0.4, gapSize: 0.25, opacity: 0.7, transparent: true });
+  const droneShadowGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+  const droneShadow = new THREE.Line(droneShadowGeo, droneShadowMat);
+  scene.add(droneShadow);
+  droneGroup.visible = false;
+  droneShadow.visible = false;
+  scene.add(droneGroup);
+
+  // Drone trail (single Line, rebuilt each frame from a points buffer)
+  const trailGeo = new THREE.BufferGeometry();
+  trailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TRAIL_MAX * 3), 3));
+  const trailMat = new THREE.LineBasicMaterial({ color: 0x1565c0, opacity: 0.5, transparent: true });
+  const droneTrail = new THREE.Line(trailGeo, trailMat);
+  droneTrail.visible = false;
+  scene.add(droneTrail);
+
+  return {
+    scene, camera, renderer, arm, ghost,
+    tipMarker, tipMarkerOutline, targetMarker, targetLine, pathLine,
+    workspaceSphere: ws,
+    camGroup, fovCone, droneGroup, droneShadow, droneTrail,
+  };
+}
+
+// ============================================================================
+// MAIN VIEWER (with drag-tip interaction + camera controls)
+// ============================================================================
+function Viewer({ angles, targetXYZ, setTargetXYZ, onCommit, viewMode, showWorkspace, catchPath, dronePos, droneTrail, showCamFov }) {
+  const mountRef = useRef(null);
+  const stateRef = useRef({});
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    if (viewMode === 'multi') {
+      // Three side-by-side mini scenes
+      const subDivs = ['front','top','iso'].map(label => {
+        const div = document.createElement('div');
+        div.style.cssText = 'flex:1;border-right:1px solid #0a0a0a;position:relative;min-width:0;';
+        const tag = document.createElement('div');
+        tag.textContent = label.toUpperCase();
+        tag.style.cssText = 'position:absolute;top:8px;left:8px;font-family:IBM Plex Mono,monospace;font-size:9px;letter-spacing:0.16em;font-weight:700;color:#0a0a0a;background:#f4f1e8;padding:2px 6px;border:1px solid #0a0a0a;z-index:10;';
+        div.appendChild(tag);
+        mount.appendChild(div);
+        return { label, div };
+      });
+      // remove last border
+      subDivs[subDivs.length-1].div.style.borderRight = '0';
+      mount.style.cssText = 'display:flex;width:100%;height:100%;background:#f4f1e8;';
+
+      const subs = subDivs.map(({label, div}) => {
+        const built = buildScene(div);
+        // configure camera per view
+        if (label === 'front') {
+          built.camera.position.set(0, 14, 60);
+        } else if (label === 'top') {
+          built.camera.position.set(0, 90, 0.01);
+        } else { // iso
+          built.camera.position.set(45, 38, 45);
+        }
+        built.camera.lookAt(0, 14, 0);
+        return { ...built, label, div };
+      });
+
+      let raf;
+      const tick = () => {
+        const a = stateRef.current.angles;
+        const t = stateRef.current.targetXYZ;
+        const ws = stateRef.current.showWorkspace;
+        for (const s of subs) {
+          if (a) {
+            s.arm.setAngles(a.b, a.s, a.e);
+            const tip = fk(a.b, a.s, a.e);
+            s.tipMarker.position.set(tip.x, tip.z, -tip.y);
+            s.tipMarkerOutline.position.copy(s.tipMarker.position);
+          }
+          if (t) {
+            const r = ik(t.x, t.y, t.z);
+            if (r.ok) {
+              s.ghost.root.visible = true;
+              s.ghost.setAngles(r.b, r.s, r.e);
+            } else { s.ghost.root.visible = false; }
+            s.targetMarker.visible = true;
+            s.targetMarker.position.set(t.x, t.z, -t.y);
+            const pos = s.targetLine.geometry.attributes.position;
+            pos.setXYZ(0, t.x, 0, -t.y);
+            pos.setXYZ(1, t.x, t.z, -t.y);
+            pos.needsUpdate = true;
+            s.targetLine.visible = true;
+            s.targetLine.computeLineDistances();
+          } else {
+            s.ghost.root.visible = false;
+            s.targetMarker.visible = false;
+            s.targetLine.visible = false;
+          }
+          s.workspaceSphere.visible = !!ws;
+          // Drone marker + trail (multi-view)
+          const dp = stateRef.current.dronePos;
+          const trail = stateRef.current.droneTrail || [];
+          const showFov = stateRef.current.showCamFov;
+          s.fovCone.visible = !!showFov;
+          if (dp) {
+            s.droneGroup.position.set(dp.x, dp.z, -dp.y);
+            s.droneGroup.visible = true;
+            // Vertical shadow line
+            const sp = s.droneShadow.geometry.attributes.position;
+            sp.setXYZ(0, dp.x, 0, -dp.y);
+            sp.setXYZ(1, dp.x, dp.z, -dp.y);
+            sp.needsUpdate = true;
+            s.droneShadow.computeLineDistances();
+            s.droneShadow.visible = true;
+          } else {
+            s.droneGroup.visible = false;
+            s.droneShadow.visible = false;
+          }
+          if (trail.length >= 2) {
+            const ta = s.droneTrail.geometry.attributes.position;
+            const N = Math.min(trail.length, TRAIL_MAX);
+            for (let i = 0; i < N; i++) {
+              const p = trail[trail.length - N + i];
+              ta.setXYZ(i, p.x, p.z, -p.y);
+            }
+            s.droneTrail.geometry.setDrawRange(0, N);
+            ta.needsUpdate = true;
+            s.droneTrail.visible = true;
+          } else {
+            s.droneTrail.visible = false;
+          }
+          s.renderer.render(s.scene, s.camera);
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      tick();
+
+      const onResize = () => {
+        for (const s of subs) {
+          const w = s.div.clientWidth, h = s.div.clientHeight;
+          s.renderer.setSize(w, h);
+          s.camera.aspect = w / h;
+          s.camera.updateProjectionMatrix();
+        }
+      };
+      window.addEventListener('resize', onResize);
+
+      stateRef.current.dispose = () => {
+        cancelAnimationFrame(raf);
+        window.removeEventListener('resize', onResize);
+        for (const s of subs) {
+          s.renderer.dispose();
+          if (s.div.parentNode === mount) mount.removeChild(s.div);
+        }
+      };
+      return () => stateRef.current.dispose?.();
+    }
+
+    // Single view
+    const built = buildScene(mount);
+    const { scene, camera, renderer, arm, ghost, tipMarker, tipMarkerOutline, targetMarker, targetLine, pathLine, workspaceSphere, camGroup, fovCone, droneGroup, droneShadow, droneTrail } = built;
+
+    const cam = { az: -Math.PI / 4, el: Math.PI / 5.5, dist: 78, target: new THREE.Vector3(0, 14, 0) };
+    function updateCam() {
+      camera.position.x = cam.target.x + cam.dist * Math.cos(cam.el) * Math.cos(cam.az);
+      camera.position.z = cam.target.z + cam.dist * Math.cos(cam.el) * Math.sin(cam.az);
+      camera.position.y = cam.target.y + cam.dist * Math.sin(cam.el);
+      camera.lookAt(cam.target);
+    }
+    updateCam();
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let orbiting = false, dragging = false, dragZ = 22, hoverTip = false;
+    let orbitStart = null;
+
+    function ndc(e) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+    function planeHit(yLevel) {
+      raycaster.setFromCamera(mouse, camera);
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -yLevel);
+      const pt = new THREE.Vector3();
+      const ok = raycaster.ray.intersectPlane(plane, pt);
+      return ok ? pt : null;
+    }
+
+    const onDown = (e) => {
+      if (e.button !== 0) return;
+      ndc(e);
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObject(tipMarker);
+      if (hits.length > 0) {
+        dragging = true;
+        dragZ = tipMarker.position.y;
+        stateRef.current.onDragStart?.();
+        renderer.domElement.style.cursor = 'grabbing';
+      } else {
+        orbiting = true;
+        orbitStart = { x: e.clientX, y: e.clientY, az: cam.az, el: cam.el };
+        renderer.domElement.style.cursor = 'grabbing';
+      }
+    };
+    const onMove = (e) => {
+      ndc(e);
+      if (dragging) {
+        const pt = planeHit(dragZ);
+        if (pt) stateRef.current.onDragMove?.({ x: pt.x, y: -pt.z, z: dragZ });
+      } else if (orbiting) {
+        cam.az = orbitStart.az - (e.clientX - orbitStart.x) * 0.008;
+        cam.el = Math.max(0.05, Math.min(Math.PI / 2 - 0.05, orbitStart.el + (e.clientY - orbitStart.y) * 0.008));
+        updateCam();
+      } else {
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObject(tipMarker);
+        const nh = hits.length > 0;
+        if (nh !== hoverTip) {
+          hoverTip = nh;
+          renderer.domElement.style.cursor = nh ? 'grab' : 'default';
+          tipMarker.scale.setScalar(nh ? 1.3 : 1.0);
+          tipMarkerOutline.scale.setScalar(nh ? 1.3 : 1.0);
+        }
+      }
+    };
+    const onUp = () => {
+      if (dragging) { stateRef.current.onDragEnd?.(); dragging = false; }
+      orbiting = false;
+      renderer.domElement.style.cursor = hoverTip ? 'grab' : 'default';
+    };
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (dragging) {
+        dragZ = Math.max(Z_FLOOR + 0.5, Math.min(REACH + SHLD_OFF, dragZ - e.deltaY * 0.02));
+        const pt = planeHit(dragZ);
+        if (pt) stateRef.current.onDragMove?.({ x: pt.x, y: -pt.z, z: dragZ });
+      } else {
+        cam.dist = Math.max(25, Math.min(150, cam.dist + e.deltaY * 0.12));
+        updateCam();
+      }
+    };
+    renderer.domElement.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+
+    const onResize = () => {
+      const w = mount.clientWidth, h = mount.clientHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    };
+    window.addEventListener('resize', onResize);
+
+    let raf;
+    const tick = () => {
+      const s = stateRef.current;
+      if (s.angles) {
+        arm.setAngles(s.angles.b, s.angles.s, s.angles.e);
+        const t = fk(s.angles.b, s.angles.s, s.angles.e);
+        tipMarker.position.set(t.x, t.z, -t.y);
+        tipMarkerOutline.position.copy(tipMarker.position);
+      }
+      if (s.targetXYZ) {
+        const r = ik(s.targetXYZ.x, s.targetXYZ.y, s.targetXYZ.z);
+        if (r.ok) { ghost.root.visible = true; ghost.setAngles(r.b, r.s, r.e); }
+        else ghost.root.visible = false;
+        targetMarker.visible = true;
+        targetMarker.position.set(s.targetXYZ.x, s.targetXYZ.z, -s.targetXYZ.y);
+        const pos = targetLine.geometry.attributes.position;
+        pos.setXYZ(0, s.targetXYZ.x, 0, -s.targetXYZ.y);
+        pos.setXYZ(1, s.targetXYZ.x, s.targetXYZ.z, -s.targetXYZ.y);
+        pos.needsUpdate = true;
+        targetLine.visible = true;
+        targetLine.computeLineDistances();
+      } else {
+        ghost.root.visible = false;
+        targetMarker.visible = false;
+        targetLine.visible = false;
+      }
+      workspaceSphere.visible = !!s.showWorkspace;
+
+      // Drone marker + trail + FOV cone (single view)
+      fovCone.visible = !!s.showCamFov;
+      const dp = s.dronePos;
+      if (dp) {
+        droneGroup.position.set(dp.x, dp.z, -dp.y);
+        droneGroup.visible = true;
+        const sp = droneShadow.geometry.attributes.position;
+        sp.setXYZ(0, dp.x, 0, -dp.y);
+        sp.setXYZ(1, dp.x, dp.z, -dp.y);
+        sp.needsUpdate = true;
+        droneShadow.computeLineDistances();
+        droneShadow.visible = true;
+      } else {
+        droneGroup.visible = false;
+        droneShadow.visible = false;
+      }
+      const trail = s.droneTrail || [];
+      if (trail.length >= 2) {
+        const ta = droneTrail.geometry.attributes.position;
+        const N = Math.min(trail.length, TRAIL_MAX);
+        for (let i = 0; i < N; i++) {
+          const p = trail[trail.length - N + i];
+          ta.setXYZ(i, p.x, p.z, -p.y);
+        }
+        droneTrail.geometry.setDrawRange(0, N);
+        ta.needsUpdate = true;
+        droneTrail.visible = true;
+      } else {
+        droneTrail.visible = false;
+      }
+
+      // catch path
+      if (s.catchPath && s.catchPath.length > 1) {
+        const pts = [];
+        for (const p of s.catchPath) pts.push(new THREE.Vector3(p.x, p.z, -p.y));
+        pathLine.geometry.dispose();
+        pathLine.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+        pathLine.visible = true;
+      } else {
+        pathLine.visible = false;
+      }
+
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+
+    stateRef.current.dispose = () => {
+      cancelAnimationFrame(raf);
+      renderer.domElement.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      renderer.domElement.removeEventListener('wheel', onWheel);
+      window.removeEventListener('resize', onResize);
+      renderer.dispose();
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
+    };
+    return () => stateRef.current.dispose?.();
+  }, [viewMode]);
+
+  // sync props every render
+  useEffect(() => {
+    stateRef.current.angles = angles;
+    stateRef.current.targetXYZ = targetXYZ;
+    stateRef.current.showWorkspace = showWorkspace;
+    stateRef.current.catchPath = catchPath;
+    stateRef.current.dronePos = dronePos;
+    stateRef.current.droneTrail = droneTrail;
+    stateRef.current.showCamFov = showCamFov;
+    stateRef.current.onDragStart = () => {
+      const t = fk(angles.b, angles.s, angles.e);
+      setTargetXYZ({ x: t.x, y: t.y, z: t.z });
+    };
+    stateRef.current.onDragMove = (p) => setTargetXYZ(p);
+    stateRef.current.onDragEnd = () => {
+      if (stateRef.current.targetXYZ) onCommit(stateRef.current.targetXYZ);
+    };
+  });
+
+  return <div ref={mountRef} style={{ width: '100%', height: '100%', position: 'relative', background: '#f4f1e8' }} />;
+}
+
+// ============================================================================
+// SERIAL HOOK
+// ============================================================================
+function useSerial({ onLine, onTelemetry, onRaw, resetOnOpen = false }) {
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState(null);
+  const portRef = useRef(null);
+  const writerRef = useRef(null);
+  const readerRef = useRef(null);
+  const buf = useRef('');
+  const keep = useRef(false);
+  const onLineR = useRef(onLine);
+  const onTelR = useRef(onTelemetry);
+  const onRawR = useRef(onRaw);
+  useEffect(() => { onLineR.current = onLine; onTelR.current = onTelemetry; onRawR.current = onRaw; }, [onLine, onTelemetry, onRaw]);
+
+  const connect = useCallback(async () => {
+    if (!('serial' in navigator)) {
+      setError('WebSerial not supported. Use Chrome, Edge, or Brave.');
+      return;
+    }
+    try {
+      const port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 115200 });
+      portRef.current = port;
+
+      // ESP32-CAM-MB and similar CH340-based boards have an auto-reset circuit
+      // where DTR drives EN (reset) and RTS drives GPIO0 (boot mode select).
+      // GPIO0 LOW at reset = bootloader (waiting for download).
+      // GPIO0 HIGH at reset = run program normally.
+      //
+      // Web Serial defaults to RTS asserted (line LOW), which pulls GPIO0 low
+      // and traps the chip in bootloader. We need: assert DTR (EN low = held
+      // in reset), de-assert RTS (GPIO0 high = run mode), then release DTR.
+      //
+      // Sequence (note: setSignals true = line driven LOW for DTR/RTS):
+      //   1. DTR=true,  RTS=false  -> chip held in reset, GPIO0 high
+      //   2. wait
+      //   3. DTR=false, RTS=false  -> release reset with GPIO0 still high -> RUN
+      if (resetOnOpen) {
+        try {
+          // Make sure we're not stuck in bootloader. Force RTS deasserted.
+          await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+          await new Promise(r => setTimeout(r, 50));
+          // Hold reset, GPIO0 high
+          await port.setSignals({ dataTerminalReady: true,  requestToSend: false });
+          await new Promise(r => setTimeout(r, 100));
+          // Release reset with GPIO0 still high -> normal boot
+          await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+          await new Promise(r => setTimeout(r, 50));
+        } catch (e) {
+          setError(`reset failed: ${e.message}`);
+        }
+      }
+
+      const dec = new TextDecoderStream();
+      port.readable.pipeTo(dec.writable).catch(() => {});
+      const reader = dec.readable.getReader();
+      readerRef.current = reader;
+      keep.current = true;
+      const enc = new TextEncoderStream();
+      enc.readable.pipeTo(port.writable).catch(() => {});
+      writerRef.current = enc.writable.getWriter();
+      setConnected(true); setError(null);
+      (async () => {
+        try {
+          while (keep.current) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            onRawR.current?.(value);
+            buf.current += value;
+            let idx;
+            while ((idx = buf.current.indexOf('\n')) >= 0) {
+              const line = buf.current.slice(0, idx).replace(/\r$/, '');
+              buf.current = buf.current.slice(idx + 1);
+              if (line.startsWith('$T,')) onTelR.current?.(line);
+              else if (line.length > 0) onLineR.current?.(line);
+            }
+          }
+        } catch (e) { setError(e.message); }
+      })();
+    } catch (e) { setError(e.message); }
+  }, [resetOnOpen]);
+
+  const disconnect = useCallback(async () => {
+    keep.current = false;
+    try { await readerRef.current?.cancel(); } catch {}
+    try { await writerRef.current?.close(); } catch {}
+    try { await portRef.current?.close(); } catch {}
+    readerRef.current = null; writerRef.current = null; portRef.current = null;
+    setConnected(false);
+  }, []);
+
+  const send = useCallback(async (s) => {
+    if (!writerRef.current) return false;
+    try { await writerRef.current.write(s); return true; }
+    catch (e) { setError(e.message); return false; }
+  }, []);
+
+  const pulseReset = useCallback(async () => {
+    const port = portRef.current;
+    if (!port) return false;
+    try {
+      // Same proper sequence as resetOnOpen above:
+      // RTS de-asserted (GPIO0 high) the whole time, DTR pulsed (EN reset)
+      await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      await new Promise(r => setTimeout(r, 30));
+      await port.setSignals({ dataTerminalReady: true,  requestToSend: false });
+      await new Promise(r => setTimeout(r, 100));
+      await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      return true;
+    } catch (e) { setError(e.message); return false; }
+  }, []);
+
+  // Release both control lines. Use this if the chip is held in reset and a
+  // pulseReset doesn't seem to do anything - the polarity might be opposite
+  // on some boards, in which case just letting the lines float is what works.
+  const releaseSignals = useCallback(async () => {
+    const port = portRef.current;
+    if (!port) return false;
+    try {
+      await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      return true;
+    } catch (e) { setError(e.message); return false; }
+  }, []);
+
+  return { connected, error, connect, disconnect, send, pulseReset, releaseSignals };
+}
+
+// ============================================================================
+// GAMEPAD HOOK
+// ============================================================================
+function useGamepad({ enabled, onAction }) {
+  const lastBtn = useRef({});
+  const lastAxisAction = useRef(0);
+  const onActionR = useRef(onAction);
+  useEffect(() => { onActionR.current = onAction; }, [onAction]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let raf;
+    const tick = () => {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      const pad = pads[0];
+      if (pad) {
+        // Buttons
+        for (let i = 0; i < pad.buttons.length; i++) {
+          const pressed = pad.buttons[i].pressed;
+          const was = lastBtn.current[i] || false;
+          if (pressed && !was) onActionR.current?.({ type: 'btn', i });
+          lastBtn.current[i] = pressed;
+        }
+        // Axes (sticks + triggers)
+        const axes = pad.axes;
+        const now = performance.now();
+        if (now - lastAxisAction.current > 80) {
+          // call axis callback periodically
+          onActionR.current?.({ type: 'axes', axes: Array.from(axes), buttons: pad.buttons.map(b => b.value) });
+          lastAxisAction.current = now;
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [enabled]);
+}
+
+// ============================================================================
+// MISC UI ATOMS
+// ============================================================================
+function Dot({ on, color = 'var(--signal-2)' }) {
+  return (
+    <span style={{
+      display: 'inline-block', width: 8, height: 8,
+      background: on ? color : 'transparent',
+      border: `1px solid ${on ? color : 'var(--grey-2)'}`,
+      animation: on ? 'pulse-dot 2s ease-in-out infinite' : 'none',
+    }} />
+  );
+}
+
+function Readout({ label, value, unit, color, mono = true }) {
+  return (
+    <div className="readout-row">
+      <span className="label">{label}</span>
+      <span className={mono ? 'mono tabular' : ''} style={{ color: color || 'var(--ink)', fontWeight: 600, fontSize: 12 }}>
+        {value}{unit && <span style={{ marginLeft: 4, color: 'var(--grey-1)', fontSize: 10 }}>{unit}</span>}
+      </span>
+    </div>
+  );
+}
+
+function AngleBar({ label, value, min, max, target, forbid }) {
+  const pct = (v) => ((v - min) / (max - min)) * 100;
+  const fillPct = Math.max(0, Math.min(100, pct(value)));
+  const cPct = pct(0);
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+        <span className="label label-strong">{label}</span>
+        <span className="mono tabular" style={{ fontSize: 13, fontWeight: 700 }}>
+          {value >= 0 ? '+' : ''}{value.toFixed(1)}°
+        </span>
+      </div>
+      <div className="tbar">
+        {forbid && (
+          <div className="forbid" style={{ left: `${pct(forbid[0])}%`, width: `${pct(forbid[1]) - pct(forbid[0])}%` }} />
+        )}
+        <div className="center" style={{ left: `${cPct}%` }} />
+        <div className="fill" style={{
+          left: `${Math.min(cPct, fillPct)}%`,
+          width: `${Math.abs(fillPct - cPct)}%`,
+        }} />
+        {target !== undefined && target !== null && !isNaN(target) && (
+          <div className="target" style={{ left: `${Math.max(0, Math.min(100, pct(target)))}%` }} />
+        )}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+        <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)' }}>{min}</span>
+        <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)' }}>0</span>
+        <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)' }}>+{max}</span>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ num, title, right }) {
+  return (
+    <div className="section-head">
+      <div style={{ display: 'flex', alignItems: 'baseline' }}>
+        {num && <span className="num">{num}</span>}
+        <span className="title">{title}</span>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function CamSendInput({ onSend }) {
+  const [val, setVal] = useState('');
+  const submit = () => {
+    if (!val) return;
+    onSend?.(val);
+    setVal('');
+  };
+  return (
+    <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+      <input
+        type="text"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+        placeholder="cmd (try ? or t60)"
+        className="mono"
+        style={{ flex: 1, fontSize: 10, padding: '4px 6px', border: '1px solid var(--hairline-strong)', background: 'var(--paper)' }}
+      />
+      <button onClick={submit} style={{ fontSize: 10, padding: '4px 10px' }}>SEND</button>
+    </div>
+  );
+}
+
+// ============================================================================
+// ROLLING CHART (used in graphs tab)
+// ============================================================================
+function LineChart({ traces, height = 140, yMin, yMax, label }) {
+  // traces: [{ data: [{t, v}], color, label }]
+  const ref = useRef(null);
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    cv.width = w * dpr;
+    cv.height = h * dpr;
+    const ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+    // bg
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+    // grid
+    ctx.strokeStyle = 'rgba(10,10,10,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 10; i++) {
+      ctx.beginPath();
+      ctx.moveTo((i / 10) * w, 0);
+      ctx.lineTo((i / 10) * w, h);
+      ctx.stroke();
+    }
+    for (let i = 1; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, (i / 5) * h);
+      ctx.lineTo(w, (i / 5) * h);
+      ctx.stroke();
+    }
+    // border
+    ctx.strokeStyle = '#0a0a0a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+    // zero line
+    if (yMin < 0 && yMax > 0) {
+      const zy = h - ((0 - yMin) / (yMax - yMin)) * h;
+      ctx.strokeStyle = '#0a0a0a';
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(0, zy);
+      ctx.lineTo(w, zy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    // collect time range
+    const allT = traces.flatMap(t => t.data.map(p => p.t));
+    if (allT.length === 0) return;
+    const tMax = Math.max(...allT);
+    const tMin = tMax - 12000; // 12s window
+    // draw each trace
+    for (const tr of traces) {
+      const data = tr.data.filter(p => p.t >= tMin);
+      if (data.length < 2) continue;
+      ctx.strokeStyle = tr.color;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let i = 0; i < data.length; i++) {
+        const x = ((data[i].t - tMin) / (tMax - tMin)) * w;
+        const y = h - ((data[i].v - yMin) / (yMax - yMin)) * h;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  });
+  return <canvas ref={ref} style={{ width: '100%', height: `${height}px`, display: 'block' }} />;
+}
+
+// ============================================================================
+// MAIN APP
+// ============================================================================
+function App() {
+  const [angles, setAngles] = useState({ b: 0, s: 50, e: 90 });
+  const [tipFromFW, setTipFromFW] = useState(null);
+  const [wrist, setWrist] = useState({ r: 90, p: 120 });
+  // Joint offsets (deg). Mirrors firmware state. Updated from telemetry+[cal] lines.
+  // UI never sets these directly except as initial value before first sync from arm.
+  const [jointOffsets, setJointOffsets] = useState({ b: 0, s: -17, e: 0 });
+  const [calSavedHint, setCalSavedHint] = useState(0); // bumps on save
+  const [mode, setMode] = useState('MANUAL');
+  const [speed, setSpeed] = useState(40);
+  const [pulseMs, setPulseMs] = useState(500);
+  const [stepIn, setStepIn] = useState(1);
+  const [loop, setLoop] = useState(false);
+  const [imuQuat, setImuQuat] = useState({ w: 1, x: 0, y: 0, z: 0 });
+  const [imuReady, setImuReady] = useState(false);
+  const [tab, setTab] = useState('view'); // view | graphs | catch | controller
+  const [viewMode, setViewMode] = useState('single'); // single | multi
+  const [showWorkspace, setShowWorkspace] = useState(false);
+  const [activeDance, setActiveDance] = useState(0);
+  const [streamOn, setStreamOn] = useState(true);
+  const [gamepadEnabled, setGamepadEnabled] = useState(false);
+  const [gamepadJointMode, setGamepadJointMode] = useState(false);
+  const [gamepadInfo, setGamepadInfo] = useState(null);
+
+  // graphs / history
+  const histRef = useRef({ angles: [], pwm: [], tip: [] });
+  const tickHist = useCallback((a, t) => {
+    const now = Date.now();
+    const h = histRef.current;
+    h.angles.push({ t: now, b: a.b, s: a.s, e: a.e });
+    if (t) h.tip.push({ t: now, x: t.x, y: t.y, z: t.z });
+    // trim to 30s
+    const cutoff = now - 30000;
+    h.angles = h.angles.filter(p => p.t > cutoff);
+    h.tip = h.tip.filter(p => p.t > cutoff);
+  }, []);
+
+  const [targetXYZ, setTargetXYZ] = useState(null);
+  const [catchPath, setCatchPath] = useState(null);
+  const [catchSimRunning, setCatchSimRunning] = useState(false);
+
+  // terminal
+  const [lines, setLines] = useState([
+    { t: 'sys', s: 'ARM-01 GROUND CONTROL · v3' },
+    { t: 'sys', s: 'STANDBY · awaiting link' },
+  ]);
+  const termRef = useRef(null);
+  const [cmdInput, setCmdInput] = useState('');
+
+  const addLine = useCallback((s, tag = 'rx') => {
+    setLines((p) => {
+      const n = [...p, { t: tag, s }];
+      return n.slice(-400);
+    });
+  }, []);
+
+  // Telemetry parser
+  const onTelemetry = useCallback((line) => {
+    // v2 format: $T,b,s,e,x,y,z,roll,pitch,mode,qw,qx,qy,qz
+    // v3 format: ...,bOff,sOff,eOff       (3 extra fields at end)
+    const parts = line.slice(3).split(',');
+    if (parts.length < 13) return;
+    const a = { b: +parts[0], s: +parts[1], e: +parts[2] };
+    const t = { x: +parts[3], y: +parts[4], z: +parts[5] };
+    setAngles(a);
+    setTipFromFW(t);
+    setWrist({ r: +parts[6], p: +parts[7] });
+    const m = parseInt(parts[8]);
+    if (!isNaN(m) && m >= 0 && m < MODE_NAMES.length) setMode(MODE_NAMES[m]);
+    setImuQuat({ w: +parts[9], x: +parts[10], y: +parts[11], z: +parts[12] });
+    setImuReady(!(+parts[9] === 1 && +parts[10] === 0 && +parts[11] === 0 && +parts[12] === 0));
+    // v3: joint offsets carried in telemetry so UI is always in sync
+    if (parts.length >= 16) {
+      const bOff = +parts[13], sOff = +parts[14], eOff = +parts[15];
+      if (isFinite(bOff) && isFinite(sOff) && isFinite(eOff)) {
+        setJointOffsets((prev) => {
+          if (prev.b === bOff && prev.s === sOff && prev.e === eOff) return prev;
+          return { b: bOff, s: sOff, e: eOff };
+        });
+      }
+    }
+    tickHist(a, t);
+  }, [tickHist]);
+
+  const onSerialLine = useCallback((line) => {
+    addLine(line, 'rx');
+    // also parse mode/setting changes from human-readable lines
+    let m;
+    if ((m = line.match(/^>>\s*(\w+)/))) setMode(m[1]);
+    if ((m = line.match(/^speed=(\d+)/))) setSpeed(+m[1]);
+    if ((m = line.match(/^pulseMs=(\d+)/))) setPulseMs(+m[1]);
+    if ((m = line.match(/^stepIn=([\d.]+)/))) setStepIn(+m[1]);
+    if ((m = line.match(/^loop=(on|off)/))) setLoop(m[1] === 'on');
+    if ((m = line.match(/^telemetry=(on|off)/))) setStreamOn(m[1] === 'on');
+    if ((m = line.match(/^IMU:\s*(\w+)/))) setImuReady(m[1] === 'online');
+    // [cal] B=0.00 S=17.00 E=0.00
+    if ((m = line.match(/\[cal\]\s+B=(-?[\d.]+)\s+S=(-?[\d.]+)\s+E=(-?[\d.]+)/))) {
+      setJointOffsets({ b: +m[1], s: +m[2], e: +m[3] });
+    }
+    if (line.includes('[cal] saved to EEPROM')) setCalSavedHint(t => t + 1);
+    if ((m = line.match(/^\[dance\] selected: (\w+)/))) {
+      const idx = DANCE_NAMES.indexOf(m[1]);
+      if (idx >= 0) setActiveDance(idx);
+    }
+  }, [addLine]);
+
+  const { connected, error, connect, disconnect, send } = useSerial({
+    onLine: onSerialLine,
+    onTelemetry,
+  });
+
+  // ============================================================================
+  // CAM TRACKING STATE
+  // ============================================================================
+  const [showCamFov, setShowCamFov] = useState(false);
+  const [dronePos, setDronePos] = useState(null);          // world XYZ in inches (smoothed)
+  const [camRawXYZ, setCamRawXYZ] = useState(null);        // raw cam-frame mm for display
+  const [camFps, setCamFps] = useState(0);
+  const [camLastSeen, setCamLastSeen] = useState(0);
+  const [camLostStreak, setCamLostStreak] = useState(0);
+  const [camLastRawLine, setCamLastRawLine] = useState('');
+
+  // Cam orientation tunables (user adjusts to match physical sensor mount)
+  const [camRotation, setCamRotation] = useState(0);   // 0 / 90 / 180 / 270
+  const [camFlipH, setCamFlipH]       = useState(true); // default to my prior implicit
+  const [camFlipV, setCamFlipV]       = useState(false);
+  const [camZOffset, setCamZOffset]   = useState(0);   // inches, fudge factor for height
+  const [smoothAlpha, setSmoothAlpha] = useState(0.35); // EMA: 0=none, 1=infinite smoothing
+  const camOrientRef = useRef({ rotation: 0, flipH: true, flipV: false, zOffset: 0, alpha: 0.35 });
+  useEffect(() => {
+    camOrientRef.current = { rotation: camRotation, flipH: camFlipH, flipV: camFlipV, zOffset: camZOffset, alpha: smoothAlpha };
+  }, [camRotation, camFlipH, camFlipV, camZOffset, smoothAlpha]);
+
+  const smoothedRef = useRef(null); // last smoothed world pos
+  const droneTrailRef = useRef([]);
+  const camFrameCountRef = useRef({ count: 0, since: Date.now() });
+
+  // Mini-terminal log for cam debugging (separate from main terminal so the cam
+  // panel has its own scrollable view). Stored in a ref to avoid re-rendering
+  // on every line, with a tick counter to trigger renders at most ~10Hz.
+  const camLogRef = useRef([]);   // [{ts, kind: 'rx'|'tx'|'sys', text}]
+  const [camLogTick, setCamLogTick] = useState(0);
+  const camTickThrottleRef = useRef(0);
+  const pushCamLog = useCallback((text, kind = 'rx') => {
+    const log = camLogRef.current;
+    log.push({ ts: Date.now(), kind, text });
+    while (log.length > 200) log.shift();
+    const now = Date.now();
+    if (now - camTickThrottleRef.current >= 100) {
+      camTickThrottleRef.current = now;
+      setCamLogTick(t => t + 1);
+    }
+  }, []);
+  const [camRxBytes, setCamRxBytes] = useState(0);
+
+  // Parser for cam serial lines. Cam output format:
+  //   FOUND  XYZ=(   -3.5,    10.2,   425.8) mm  area=  842  px=( 158.4,  121.7)  fps=12.3
+  //   LOST   area=...
+  // Anything else (boot banner, OK responses) gets pushed to terminal.
+  // Regex is permissive: accepts any whitespace between numbers, optional inf/nan,
+  // and tolerates extra junk after the closing paren.
+  const reFound = /FOUND[^()]*\(\s*(-?\d+(?:\.\d+)?|-?inf|nan)\s*,\s*(-?\d+(?:\.\d+)?|-?inf|nan)\s*,\s*(-?\d+(?:\.\d+)?|-?inf|nan)\s*\)/i;
+  const reLost  = /^LOST\b/i;
+  const onCamLine = useCallback((line) => {
+    // Track every raw line for the diag display + cam log
+    setCamLastRawLine(line);
+    pushCamLog(line, 'rx');
+
+    // Bookkeeping fps even on lost frames
+    const fc = camFrameCountRef.current;
+    fc.count++;
+    const now = Date.now();
+    if (now - fc.since >= 1000) {
+      setCamFps(fc.count * 1000 / (now - fc.since));
+      fc.count = 0; fc.since = now;
+    }
+
+    const m = line.match(reFound);
+    if (m) {
+      const cx_mm = parseFloat(m[1]);
+      const cy_mm = parseFloat(m[2]);
+      const cz_mm = parseFloat(m[3]);
+      if (!isFinite(cx_mm) || !isFinite(cy_mm) || !isFinite(cz_mm)) {
+        addLine(`[CAM] !inf/nan in: ${line}`, 'err');
+        return;
+      }
+      const cx_in = cx_mm * MM_TO_IN;
+      const cy_in = cy_mm * MM_TO_IN;
+      const cz_in = cz_mm * MM_TO_IN;
+      const orient = camOrientRef.current;
+      const w = camFrameToWorld(cx_in, cy_in, cz_in, orient);
+
+      // EMA smoothing. alpha = how heavily to weight previous value.
+      // smoothed = prev * alpha + new * (1 - alpha)
+      // alpha 0 = pass-through raw, alpha 1 = stuck on first sample.
+      const alpha = orient.alpha;
+      let smoothed;
+      const prev = smoothedRef.current;
+      if (!prev || alpha <= 0) {
+        smoothed = w;
+      } else {
+        smoothed = {
+          x: prev.x * alpha + w.x * (1 - alpha),
+          y: prev.y * alpha + w.y * (1 - alpha),
+          z: prev.z * alpha + w.z * (1 - alpha),
+        };
+      }
+      smoothedRef.current = smoothed;
+
+      const now2 = Date.now();
+      setDronePos(smoothed);
+      setCamRawXYZ({ x: cx_mm, y: cy_mm, z: cz_mm });
+      setCamLastSeen(now2);
+      setCamLostStreak(0);
+      const trail = droneTrailRef.current;
+      trail.push({ ...smoothed, t: now2 });
+      const cutoff = now2 - TRAIL_MAX_AGE_MS;
+      while (trail.length > 0 && trail[0].t < cutoff) trail.shift();
+      while (trail.length > TRAIL_MAX) trail.shift();
+      return;
+    }
+    if (reLost.test(line)) {
+      setCamLostStreak((s) => {
+        const next = s + 1;
+        if (next >= 5) { setDronePos(null); smoothedRef.current = null; }
+        return next;
+      });
+      return;
+    }
+    // Anything that isn't FOUND/LOST: dump to terminal so we can see what cam sends
+    addLine(`[CAM] ${line}`, 'rx');
+  }, [addLine]);
+
+  // Watches raw bytes flowing in (before line splitting). Useful when the cam
+  // sends partial data with no \n - we can still see something is alive.
+  const onCamRaw = useCallback((chunk) => {
+    setCamRxBytes(b => b + chunk.length);
+    // If a chunk has no newline at all but we keep getting data, log it as a
+    // partial after a beat so we don't sit forever waiting for \n
+    // (handled by buffer in useSerial; this is just for the byte counter)
+  }, []);
+
+  const cam = useSerial({
+    onLine: onCamLine,
+    onTelemetry: () => {}, // no $T from cam
+    onRaw: onCamRaw,
+    resetOnOpen: true,     // pulse DTR to wake up ESP32 from reset/bootloader
+  });
+
+  useEffect(() => {
+    if (termRef.current) termRef.current.scrollTop = termRef.current.scrollHeight;
+  }, [lines]);
+
+  // Sim tick when not connected
+  const [simTarget, setSimTarget] = useState(null);
+  useEffect(() => {
+    if (connected) return;
+    let raf;
+    const step = () => {
+      if (simTarget) {
+        setAngles((cur) => {
+          const next = { ...cur };
+          for (const k of ['b', 's', 'e']) {
+            const err = simTarget[k] - cur[k];
+            if (Math.abs(err) < 0.4) next[k] = simTarget[k];
+            else next[k] = cur[k] + Math.sign(err) * Math.min(2.5, Math.abs(err));
+          }
+          return next;
+        });
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [connected, simTarget]);
+
+  // History ticker for graphs even when not getting telemetry
+  useEffect(() => {
+    if (connected) return;
+    const id = setInterval(() => {
+      const t = fk(angles.b, angles.s, angles.e);
+      tickHist(angles, t);
+    }, 100);
+    return () => clearInterval(id);
+  }, [connected, angles, tickHist]);
+
+  const fkTip = useMemo(() => fk(angles.b, angles.s, angles.e), [angles]);
+  const tip = tipFromFW || fkTip;
+
+  // Send wrappers
+  const sendChar = useCallback((c) => {
+    if (connected) { send(c); addLine(`> ${c}`, 'tx'); }
+    else { addLine(`(sim) > ${c}`, 'tx'); handleSimChar(c); }
+  }, [connected, send, addLine]);
+
+  const sendLine = useCallback((s) => {
+    if (connected) { send(s + '\n'); addLine(`> ${s}`, 'tx'); }
+    else { addLine(`(sim) > ${s}`, 'tx'); handleSimLine(s); }
+  }, [connected, send, addLine]);
+
+  function handleSimChar(c) {
+    if ('MDHKBT'.includes(c)) {
+      const map = { M:'MANUAL', D:'DANCE', H:'HEIGHT', K:'XYZ', B:'DEBUG', T:'TILT' };
+      setMode(map[c]);
+    }
+    else if (c === '+') setSpeed((v) => Math.min(255, v + 10));
+    else if (c === '-') setSpeed((v) => Math.max(10, v - 10));
+    else if (c === 'L') setLoop((v) => !v);
+    else if (c === 'S') setStreamOn((v) => !v);
+    else if (c === '6') setSimTarget({ b: 0, s: 50, e: 90 });
+    else if (c === '7') setSimTarget({ b: 0, s: -40, e: 30 });
+    else if (c === '8') { const r = ik(10,0,25); if (r.ok) setSimTarget({b:r.b,s:r.s,e:r.e}); }
+    else if (c === '9') { const r = ik(14,0,20); if (r.ok) setSimTarget({b:r.b,s:r.s,e:r.e}); }
+    else if (c === '0') setSimTarget({ b: 0, s: 60, e: 110 });
+    else if (c === 'X') setSimTarget(null);
+  }
+  function handleSimLine(s) {
+    let m;
+    if ((m = s.match(/^c\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)/))) {
+      const r = ik(+m[1], +m[2], +m[3]);
+      if (r.ok) setSimTarget({ b: r.b, s: r.s, e: r.e });
+    }
+    if ((m = s.match(/^dn\s+(\d)/))) setActiveDance(+m[1]);
+    // sim cal: just update local state so the UI feels responsive when offline
+    if ((m = s.match(/^cal\s+([bse])\s+(-?[\d.]+)/))) {
+      const v = +m[2];
+      setJointOffsets(prev => ({ ...prev, [m[1]]: v }));
+    }
+    if (s === 'cal reset') setJointOffsets({ b: 0, s: 0, e: 0 });
+  }
+
+  // CAL helpers — issue commands to firmware (or sim) and let the response
+  // sync UI state via the [cal] line parser above.
+  const calSet = useCallback((axis, deg) => {
+    const v = Math.max(-90, Math.min(90, +deg.toFixed(2)));
+    sendLine(`cal ${axis} ${v}`);
+  }, [sendLine]);
+  const calNudge = useCallback((axis, delta) => {
+    const cur = jointOffsets[axis];
+    calSet(axis, cur + delta);
+  }, [jointOffsets, calSet]);
+  const calSave  = useCallback(() => sendLine('cal save'),  [sendLine]);
+  const calLoad  = useCallback(() => sendLine('cal load'),  [sendLine]);
+  const calReset = useCallback(() => sendLine('cal reset'), [sendLine]);
+  const calQuery = useCallback(() => sendLine('cal'),       [sendLine]);
+
+  // Auto-fetch offsets shortly after the Teensy connects so the UI is in sync
+  // before the first telemetry frame arrives.
+  useEffect(() => {
+    if (!connected) return;
+    const timer = setTimeout(() => { send('cal\n').catch(() => {}); }, 250);
+    return () => clearTimeout(timer);
+  }, [connected, send]);
+
+  const commitTarget = useCallback((xyz) => {
+    const r = ik(xyz.x, xyz.y, xyz.z);
+    if (!r.ok) {
+      addLine(`✖ IK: ${r.err}`, 'err');
+      setTargetXYZ(null);
+      return;
+    }
+    sendLine(`c ${xyz.x.toFixed(2)} ${xyz.y.toFixed(2)} ${xyz.z.toFixed(2)}`);
+    setTimeout(() => setTargetXYZ(null), 350);
+  }, [addLine, sendLine]);
+
+  const eStop = () => { sendChar('X'); setTargetXYZ(null); setSimTarget(null); setCatchSimRunning(false); };
+
+  // ============================================================================
+  // CATCH SEQUENCE — drives the arm to approach-from-below, then up to drone,
+  // then sets wrist to flat-upright. Works in sim AND with real firmware
+  // (sendLine handles both modes).
+  //
+  // Wrist commands assumed: `wr <deg>` and `wp <deg>` (0-180, 90 = neutral).
+  // If your firmware uses different commands, change them in catchDrone().
+  // ============================================================================
+  const catchTimerRef = useRef(null);
+  const [catchPhase, setCatchPhase] = useState(null); // 'approach' | 'grab' | null
+
+  const catchDrone = useCallback(() => {
+    if (!dronePos) {
+      addLine('✖ CATCH: no drone in view', 'err');
+      return;
+    }
+    const APPROACH_BELOW = 5.0; // inches
+    const approach = { x: dronePos.x, y: dronePos.y, z: Math.max(Z_FLOOR + 0.5, dronePos.z - APPROACH_BELOW) };
+    const grab     = { x: dronePos.x, y: dronePos.y, z: dronePos.z };
+
+    // Validate both poses reach
+    const ra = ik(approach.x, approach.y, approach.z);
+    if (!ra.ok) { addLine(`✖ CATCH approach IK: ${ra.err}`, 'err'); return; }
+    const rg = ik(grab.x, grab.y, grab.z);
+    if (!rg.ok) { addLine(`✖ CATCH grab IK: ${rg.err}`, 'err'); return; }
+
+    addLine(`▶ CATCH start  approach=(${approach.x.toFixed(1)}, ${approach.y.toFixed(1)}, ${approach.z.toFixed(1)})  grab=(${grab.x.toFixed(1)}, ${grab.y.toFixed(1)}, ${grab.z.toFixed(1)})`, 'sys');
+
+    // Show the catch path in the scene
+    setCatchPath([approach, grab]);
+
+    // Phase 1: pre-set wrist to flat upright BEFORE moving (so it's level on arrival)
+    // Magnet hangs off the very end of the wrist, past both servos. To present the
+    // face horizontally pointing UP at the drone, use the firmware's calibrated
+    // level values: ROLL_LEVEL=90, PITCH_LEVEL=120 (per arm_main_v3.ino).
+    // Uppercase WR/WP because lowercase 'w' is a manual-mode jog key.
+    sendLine('WR 90');    // wrist roll neutral
+    sendLine('WP 120');   // wrist pitch level — magnet face horizontal, pointing up
+
+    // Phase 2: move to approach pose (5" below drone)
+    setCatchPhase('approach');
+    setTargetXYZ(approach);
+    sendLine(`c ${approach.x.toFixed(2)} ${approach.y.toFixed(2)} ${approach.z.toFixed(2)}`);
+
+    if (catchTimerRef.current) clearTimeout(catchTimerRef.current);
+
+    // Phase 3: after a beat, move up to grab pose
+    catchTimerRef.current = setTimeout(() => {
+      setCatchPhase('grab');
+      setTargetXYZ(grab);
+      sendLine(`c ${grab.x.toFixed(2)} ${grab.y.toFixed(2)} ${grab.z.toFixed(2)}`);
+      addLine(`▶ CATCH grab pose committed`, 'sys');
+
+      // Phase 4: clear path + phase after settle time
+      catchTimerRef.current = setTimeout(() => {
+        setCatchPhase(null);
+        setCatchPath(null);
+      }, 2500);
+    }, 1500);
+  }, [dronePos, addLine, sendLine, setTargetXYZ, setCatchPath]);
+
+  const catchAbort = useCallback(() => {
+    if (catchTimerRef.current) clearTimeout(catchTimerRef.current);
+    catchTimerRef.current = null;
+    setCatchPhase(null);
+    setCatchPath(null);
+    setTargetXYZ(null);
+    addLine('CATCH aborted', 'sys');
+  }, [addLine]);
+
+  useEffect(() => () => { if (catchTimerRef.current) clearTimeout(catchTimerRef.current); }, []);
+
+  // Esc clears
+  useEffect(() => {
+    const onK = (e) => { if (e.key === 'Escape') setTargetXYZ(null); };
+    window.addEventListener('keydown', onK);
+    return () => window.removeEventListener('keydown', onK);
+  }, []);
+
+  // ============================================================================
+  // (Old keyboard hold-to-jog removed: it was sending `j <axis> <speed>` lines
+  // that the v3 firmware doesn't parse, and the watchdog only protected the
+  // jog system - so stuck keys could keep firing. The manual-mode keys 1/q/2/w
+  // etc. still work via the existing browser default keypress -> sendChar
+  // path or the on-screen HOLD buttons.)
+  // ============================================================================
+
+  // Gamepad: button mapping
+  // Standard layout (Xbox):
+  //   0=A 1=B 2=X 3=Y 4=LB 5=RB 6=LT 7=RT 8=Back 9=Start 10=LStick 11=RStick
+  //   12=DUp 13=DDown 14=DLeft 15=DRight
+  const gamepadAction = useCallback((evt) => {
+    if (evt.type === 'btn') {
+      const i = evt.i;
+      // A = e-stop
+      if (i === 0) eStop();
+      // X = greet (dance 1)
+      else if (i === 2) { sendLine('dn 1'); setTimeout(() => { sendChar('D'); sendChar('G'); }, 100); }
+      // B = idle (dance 2)
+      else if (i === 1) { sendLine('dn 2'); setTimeout(() => { sendChar('D'); sendChar('G'); }, 100); }
+      // Y = showcase (dance 0)
+      else if (i === 3) { sendLine('dn 0'); setTimeout(() => { sendChar('D'); sendChar('G'); }, 100); }
+      // LB/RB = combat / chase
+      else if (i === 4) { sendLine('dn 3'); setTimeout(() => { sendChar('D'); sendChar('G'); }, 100); }
+      else if (i === 5) { sendLine('dn 4'); setTimeout(() => { sendChar('D'); sendChar('G'); }, 100); }
+      // D-pad up/down = speed
+      else if (i === 12) sendChar('+');
+      else if (i === 13) sendChar('-');
+      // D-pad left = home (pose 6), D-pad right = extended (pose 9)
+      else if (i === 14) sendChar('6');
+      else if (i === 15) sendChar('9');
+      // Start = e-stop too
+      else if (i === 9) eStop();
+      // Back = toggle joint mode
+      else if (i === 8) setGamepadJointMode((v) => !v);
+    } else if (evt.type === 'axes') {
+      const ax = evt.axes;
+      const btns = evt.buttons;
+      const THRESHOLD = 0.45;  // stick must cross this for a jog to fire
+      const HOLD_REPEAT_MS = 220;  // when held past threshold, repeat at this rate
+
+      // Persistent state across axis ticks (lives on the function)
+      // We need to remember which axes are currently "engaged" and when we
+      // last fired, so we can debounce.
+      if (!evt._gpState) evt._gpState = {}; // placeholder
+      // Use refs via closure on the outer hook. Instead, store on window.
+      if (!window.__gpAxisState) {
+        window.__gpAxisState = {};  // { axis_name: { engaged: bool, lastFireMs: number } }
+      }
+      const st = window.__gpAxisState;
+      const now = performance.now();
+
+      // Helper: given a logical axis name and a signed value, fire a single
+      // sendChar event when value crosses threshold or every HOLD_REPEAT_MS
+      // while held past threshold. Returns true if fired.
+      const handle = (key, value, posChar, negChar) => {
+        const above = value > THRESHOLD;
+        const below = value < -THRESHOLD;
+        const inside = !above && !below;
+        const s = st[key] || { engaged: 0, lastFireMs: 0 };
+        if (inside) {
+          // released - clear state, no fire
+          st[key] = { engaged: 0, lastFireMs: 0 };
+          return false;
+        }
+        const dir = above ? 1 : -1;
+        // First crossing: fire once
+        if (s.engaged !== dir) {
+          st[key] = { engaged: dir, lastFireMs: now };
+          if (above && posChar) sendChar(posChar);
+          else if (below && negChar) sendChar(negChar);
+          return true;
+        }
+        // Held: repeat at HOLD_REPEAT_MS
+        if (now - s.lastFireMs >= HOLD_REPEAT_MS) {
+          st[key].lastFireMs = now;
+          if (above && posChar) sendChar(posChar);
+          else if (below && negChar) sendChar(negChar);
+          return true;
+        }
+        return false;
+      };
+
+      if (gamepadJointMode) {
+        // Joint mode: LX = base, LY = shoulder, RY = elbow
+        // Map to existing pulse-jog letters (one pulse = ~3deg on motor, repeat
+        // smoothly while held).
+        handle('base',  ax[0],  '1', 'q');
+        handle('shld', -ax[1],  '2', 'w');
+        handle('elbw', -ax[3],  '3', 'e');
+      } else {
+        // XYZ mode: stream a moving target instead of pulsing nudge keys.
+        // Each c X Y Z command overwrites the firmware's target, so the IK
+        // tracks a smoothly moving goalpost (way less jerky than discrete
+        // w/a/s/d nudges that each kick off a separate synced move).
+        if (mode !== 'XYZ') {
+          window.__gpAxisState = {};
+          return;
+        }
+        const dz = 0.18;
+        const analog = (a) => {
+          if (Math.abs(a) < dz) return 0;
+          const sign = a > 0 ? 1 : -1;
+          return sign * (Math.abs(a) - dz) / (1 - dz);  // -1..1 outside deadzone
+        };
+        const lt = btns?.[6] || 0;
+        const rt = btns?.[7] || 0;
+        // Velocity in inches/sec at full stick. Smaller = finer control.
+        const VEL = 6.0;
+        // Time since last update (track on window object since useCallback closure)
+        if (!window.__gpXyzClock) window.__gpXyzClock = { lastMs: 0, lastSentMs: 0 };
+        const clk = window.__gpXyzClock;
+        const dt = clk.lastMs ? Math.min(0.1, (now - clk.lastMs) / 1000) : 0;
+        clk.lastMs = now;
+        // Velocity from stick (cubic curve = finer at low end)
+        const vXraw = analog(-ax[1]);
+        const vYraw = analog(-ax[0]);
+        const vZraw = (rt > 0.3 ? rt : 0) - (lt > 0.3 ? lt : 0);
+        const cubic = (n) => Math.sign(n) * Math.pow(Math.abs(n), 2.0);
+        const vx = cubic(vXraw) * VEL;
+        const vy = cubic(vYraw) * VEL;
+        const vz = cubic(vZraw) * VEL;
+        if (vx === 0 && vy === 0 && vz === 0) {
+          // stick centered — release the target so any drag-ghost clears
+          if (clk.lastSentMs && now - clk.lastSentMs > 200) {
+            clk.lastSentMs = 0;
+          }
+          return;
+        }
+        // Throttle to ~30Hz
+        if (now - clk.lastSentMs < 33) return;
+        clk.lastSentMs = now;
+        // Compute new target by integrating velocity over dt from current tip
+        const nx = (tip?.x ?? 0) + vx * dt;
+        const ny = (tip?.y ?? 0) + vy * dt;
+        const nz = (tip?.z ?? 0) + vz * dt;
+        sendLine(`c ${nx.toFixed(2)} ${ny.toFixed(2)} ${nz.toFixed(2)}`);
+      }
+    }
+  }, [sendChar, sendLine, gamepadJointMode, mode, tip]);
+
+  useGamepad({ enabled: gamepadEnabled, onAction: gamepadAction });
+
+  // detect connected gamepad to display name
+  useEffect(() => {
+    const check = () => {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      const p = pads[0];
+      if (p) setGamepadInfo({ id: p.id });
+      else setGamepadInfo(null);
+    };
+    window.addEventListener('gamepadconnected', check);
+    window.addEventListener('gamepaddisconnected', check);
+    check();
+    const id = setInterval(check, 1500);
+    return () => {
+      window.removeEventListener('gamepadconnected', check);
+      window.removeEventListener('gamepaddisconnected', check);
+      clearInterval(id);
+    };
+  }, []);
+
+  // CATCH SIM
+  const catchSimRef = useRef({});
+  useEffect(() => {
+    if (!catchSimRunning) { setCatchPath(null); return; }
+    const start = performance.now();
+    let raf;
+    const path = [];
+    const step = () => {
+      const t = (performance.now() - start) / 1000;
+      // Drone trajectory: parabolic falling toward arm
+      const x = 25 - t * 12;
+      const y = -8 + Math.sin(t * 1.3) * 3;
+      const z = 30 - t * t * 4;
+      const pt = { x, y, z };
+      path.push(pt);
+      if (path.length > 50) path.shift();
+      setCatchPath([...path]);
+      // command arm if reachable
+      if (z > 5 && z < REACH + SHLD_OFF) {
+        const r = ik(x, y, z);
+        if (r.ok && !connected) setSimTarget({ b: r.b, s: r.s, e: r.e });
+      }
+      // stop after 3s
+      if (t > 3.5) { setCatchSimRunning(false); return; }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [catchSimRunning, connected]);
+
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      display: 'grid',
+      gridTemplateRows: '64px 38px 1fr 200px',
+    }}>
+      <TopBar
+        connected={connected}
+        mode={mode}
+        imuReady={imuReady}
+        error={error}
+        speed={speed}
+        streamOn={streamOn}
+        onConnect={connect}
+        onDisconnect={disconnect}
+        onEStop={eStop}
+        onToggleStream={() => sendChar('S')}
+        hasSerial={'serial' in navigator}
+      />
+
+      {/* TAB STRIP */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--ink)', background: 'var(--paper)' }}>
+        {[
+          { id: 'view', label: '01 / VIEWPORT' },
+          { id: 'graphs', label: '02 / GRAPHS' },
+          { id: 'catch', label: '03 / CATCH SIM' },
+          { id: 'controller', label: '04 / CONTROLLER' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            className={`tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >{t.label}</button>
+        ))}
+        <div style={{ flex: 1, borderRight: '1px solid var(--ink)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', borderRight: '1px solid var(--ink)' }}>
+          <span className="label">VIEW MODE</span>
+          <button onClick={() => setViewMode((v) => v === 'single' ? 'multi' : 'single')}
+            style={{ padding: '4px 10px', fontSize: 10 }}>
+            {viewMode === 'single' ? 'SINGLE' : 'MULTI'}
+          </button>
+          <button onClick={() => setShowWorkspace((v) => !v)}
+            className={showWorkspace ? 'active' : ''}
+            style={{ padding: '4px 10px', fontSize: 10 }}>
+            WS {showWorkspace ? 'ON' : 'OFF'}
+          </button>
+        </div>
+      </div>
+
+      {/* MAIN AREA */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '300px 1fr 340px',
+        gap: 0,
+        minHeight: 0,
+        borderBottom: '1px solid var(--ink)',
+      }}>
+        <LeftPanel
+          speed={speed} setSpeed={setSpeed}
+          pulseMs={pulseMs} setPulseMs={setPulseMs}
+          stepIn={stepIn} setStepIn={setStepIn}
+          sendChar={sendChar} sendLine={sendLine}
+          angles={angles} tip={tip} wrist={wrist}
+          imuQuat={imuQuat} imuReady={imuReady}
+          calProps={{
+            offsets: jointOffsets,
+            connected: connected,
+            savedHint: calSavedHint,
+            nudge: calNudge,
+            set: calSet,
+            save: calSave,
+            load: calLoad,
+            reset: calReset,
+            query: calQuery,
+          }}
+          camProps={{
+            connected: cam.connected,
+            error: cam.error,
+            connect: cam.connect,
+            disconnect: cam.disconnect,
+            fps: camFps,
+            lastSeen: camLastSeen,
+            dronePos: dronePos,
+            rawXYZ: camRawXYZ,
+            showFov: showCamFov,
+            setShowFov: setShowCamFov,
+            clearTrail: () => { droneTrailRef.current = []; setDronePos(null); },
+            catchDrone: catchDrone,
+            catchAbort: catchAbort,
+            catchPhase: catchPhase,
+            lastRawLine: camLastRawLine,
+            log: camLogRef.current,
+            logTick: camLogTick,
+            rxBytes: camRxBytes,
+            send: async (s) => { pushCamLog(s, 'tx'); return cam.send(s + '\n'); },
+            sendChar: async (c) => { pushCamLog(c, 'tx'); return cam.send(c); },
+            resetEsp: async () => { pushCamLog('--- DTR reset pulse ---', 'sys'); return cam.pulseReset(); },
+            releaseSignals: async () => { pushCamLog('--- release DTR/RTS ---', 'sys'); return cam.releaseSignals(); },
+            clearLog: () => { camLogRef.current = []; setCamLogTick(t => t + 1); setCamRxBytes(0); },
+            // Orientation + smoothing
+            rotation: camRotation,    setRotation: setCamRotation,
+            flipH: camFlipH,          setFlipH: setCamFlipH,
+            flipV: camFlipV,          setFlipV: setCamFlipV,
+            zOffset: camZOffset,      setZOffset: setCamZOffset,
+            smoothAlpha: smoothAlpha, setSmoothAlpha: setSmoothAlpha,
+          }}
+        />
+
+        <div style={{ borderLeft: '1px solid var(--ink)', borderRight: '1px solid var(--ink)', minWidth: 0, position: 'relative' }}>
+          {tab === 'view' && (
+            <CenterView
+              angles={angles}
+              targetXYZ={targetXYZ}
+              setTargetXYZ={setTargetXYZ}
+              onCommit={commitTarget}
+              tip={tip}
+              viewMode={viewMode}
+              showWorkspace={showWorkspace}
+              catchPath={catchPath}
+              dronePos={dronePos}
+              droneTrail={droneTrailRef.current}
+              showCamFov={showCamFov}
+              camStatus={{ connected: cam.connected, fps: camFps, lastSeen: camLastSeen, raw: camRawXYZ, error: cam.error, catchDrone, catchAbort, catchPhase }}
+            />
+          )}
+          {tab === 'graphs' && <GraphsTab histRef={histRef} angles={angles} tip={tip} sendLine={sendLine} setTargetXYZ={setTargetXYZ} />}
+          {tab === 'catch' && (
+            <CatchSimTab
+              running={catchSimRunning}
+              setRunning={setCatchSimRunning}
+              angles={angles}
+              targetXYZ={targetXYZ}
+              setTargetXYZ={setTargetXYZ}
+              onCommit={commitTarget}
+              tip={tip}
+              viewMode={viewMode}
+              showWorkspace={showWorkspace}
+              catchPath={catchPath}
+              dronePos={dronePos}
+              droneTrail={droneTrailRef.current}
+              showCamFov={showCamFov}
+            />
+          )}
+          {tab === 'controller' && (
+            <ControllerTab
+              enabled={gamepadEnabled}
+              setEnabled={setGamepadEnabled}
+              info={gamepadInfo}
+              jointMode={gamepadJointMode}
+              setJointMode={setGamepadJointMode}
+            />
+          )}
+        </div>
+
+        <RightPanel
+          mode={mode}
+          sendChar={sendChar} sendLine={sendLine}
+          setMode={setMode}
+          speed={speed}
+          activeDance={activeDance}
+          setActiveDance={(i) => { setActiveDance(i); sendLine(`dn ${i}`); }}
+          loop={loop}
+          fkTip={tip}
+          imuReady={imuReady}
+          targetXYZ={targetXYZ}
+          setTargetXYZ={setTargetXYZ}
+        />
+      </div>
+
+      {/* TERMINAL */}
+      <Terminal
+        lines={lines}
+        termRef={termRef}
+        cmdInput={cmdInput}
+        setCmdInput={setCmdInput}
+        onSubmit={(s) => { sendLine(s); setCmdInput(''); }}
+        streamOn={streamOn}
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// TOP BAR
+// ============================================================================
+function TopBar({ connected, mode, imuReady, error, speed, streamOn, onConnect, onDisconnect, onEStop, onToggleStream, hasSerial }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'stretch',
+      borderBottom: '1px solid var(--ink)',
+      background: 'var(--paper)',
+      position: 'relative',
+    }}>
+      {/* Brand block */}
+      <div style={{
+        background: 'var(--ink)', color: 'var(--paper)',
+        padding: '0 18px', display: 'flex', alignItems: 'center', gap: 14,
+        borderRight: '1px solid var(--ink)',
+      }}>
+        <div style={{ width: 18, height: 18, background: 'var(--hazard)' }} />
+        <div>
+          <div className="display" style={{ fontSize: 16, lineHeight: 1, letterSpacing: '0.02em' }}>ARM-01</div>
+          <div className="mono" style={{ fontSize: 9, color: 'var(--grey-2)', marginTop: 2, letterSpacing: '0.16em' }}>
+            GROUND CONTROL · v3
+          </div>
+        </div>
+      </div>
+
+      {/* status line */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12 }}>
+        {!connected ? (
+          <button className="primary" onClick={onConnect} disabled={!hasSerial}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span className="dot" style={{ color: 'var(--hazard)' }} />
+              {hasSerial ? 'CONNECT' : 'NO WEBSERIAL'}
+            </span>
+          </button>
+        ) : (
+          <button onClick={onDisconnect} className="signal">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span className="dot solid" style={{ color: 'var(--signal-2)' }} />
+              LINKED
+            </span>
+          </button>
+        )}
+
+        <div className="frame" style={{ minWidth: 110 }}>
+          <span className="frame-label">MODE</span>
+          <span className="display" style={{ fontSize: 14 }}>{mode}</span>
+        </div>
+
+        <div className="frame">
+          <span className="frame-label">IMU</span>
+          <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: imuReady ? 'var(--signal-2)' : 'var(--grey-1)' }}>
+            {imuReady ? 'NOMINAL' : 'OFFLINE'}
+          </span>
+        </div>
+
+        <div className="frame">
+          <span className="frame-label">SPEED</span>
+          <span className="mono tabular" style={{ fontSize: 12, fontWeight: 600 }}>{String(speed).padStart(3, '0')}</span>
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        <button onClick={onToggleStream} className={streamOn ? 'active' : ''}>
+          STREAM {streamOn ? 'ON' : 'OFF'}
+        </button>
+
+        <button className="hazard" onClick={onEStop}>E-STOP</button>
+      </div>
+
+      {error && (
+        <div className="mono" style={{
+          position: 'absolute', top: 64, left: 16, right: 16, fontSize: 11,
+          color: 'var(--hazard-2)', background: 'var(--paper)',
+          border: '1px solid var(--hazard-2)', padding: '4px 10px',
+        }}>
+          ERR · {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// LEFT PANEL
+// ============================================================================
+function LeftPanel({ speed, setSpeed, pulseMs, setPulseMs, stepIn, setStepIn, sendChar, sendLine, angles, tip, wrist, imuQuat, imuReady, calProps, camProps }) {
+  const reach = Math.sqrt(tip.x**2 + tip.y**2 + (tip.z - SHLD_OFF)**2);
+  return (
+    <div className="panel scrollbar" style={{ height: '100%', overflowY: 'auto', borderRight: 0 }}>
+      <SectionHeader num="A" title="TELEMETRY" />
+      <div style={{ padding: '14px 16px' }}>
+        <AngleBar label="BASE" value={angles.b} min={JOINT_MIN.b} max={JOINT_MAX.b} />
+        <AngleBar label="SHOULDER" value={angles.s} min={JOINT_MIN.s} max={JOINT_MAX.s} forbid={SHLD_FORBID} />
+        <AngleBar label="ELBOW" value={angles.e} min={JOINT_MIN.e} max={JOINT_MAX.e} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 12 }}>
+          <div className="frame">
+            <span className="frame-label">X</span>
+            <div className="mono tabular" style={{ fontSize: 13, fontWeight: 700 }}>{tip.x.toFixed(2)}</div>
+          </div>
+          <div className="frame">
+            <span className="frame-label">Y</span>
+            <div className="mono tabular" style={{ fontSize: 13, fontWeight: 700 }}>{tip.y.toFixed(2)}</div>
+          </div>
+          <div className="frame">
+            <span className="frame-label">Z</span>
+            <div className="mono tabular" style={{ fontSize: 13, fontWeight: 700 }}>{tip.z.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 10 }}>
+          <Readout label="REACH" value={`${reach.toFixed(2)} / ${REACH.toFixed(1)}`} unit="in" />
+          <Readout label="WRIST R/P" value={`${wrist.r} / ${wrist.p}`} unit="deg" />
+        </div>
+      </div>
+
+      <SectionHeader num="B" title="TUNING" />
+      <div style={{ padding: '14px 16px' }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <span className="label">PWM SPEED</span>
+            <span className="mono tabular" style={{ fontSize: 12, fontWeight: 700 }}>{speed}</span>
+          </div>
+          <input type="range" min="10" max="255" step="5"
+            value={speed}
+            onChange={(e) => {
+              const v = +e.target.value;
+              const delta = v - speed;
+              if (delta === 0) return;
+              const steps = Math.round(delta / 10);
+              for (let i = 0; i < Math.abs(steps); i++) sendChar(steps > 0 ? '+' : '-');
+              setSpeed(speed + steps * 10);
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <span className="label">PULSE MS</span>
+            <span className="mono tabular" style={{ fontSize: 12, fontWeight: 700 }}>{pulseMs}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button style={{ flex: 1 }} onClick={() => { if (pulseMs >= 200) setPulseMs(pulseMs - 100); sendChar('['); }}>−100</button>
+            <button style={{ flex: 1 }} onClick={() => { setPulseMs(pulseMs + 100); sendChar(']'); }}>+100</button>
+          </div>
+        </div>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <span className="label">XYZ STEP</span>
+            <span className="mono tabular" style={{ fontSize: 12, fontWeight: 700 }}>{stepIn.toFixed(2)}″</span>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button style={{ flex: 1 }} onClick={() => { if (stepIn > 0.25) setStepIn(Math.max(0.25, stepIn - 0.25)); sendChar(','); }}>−0.25</button>
+            <button style={{ flex: 1 }} onClick={() => { setStepIn(stepIn + 0.25); sendChar('.'); }}>+0.25</button>
+          </div>
+        </div>
+      </div>
+
+      <SectionHeader num="C" title="MOTOR DIR" />
+      <div style={{ padding: '14px 16px' }}>
+        <div className="mono" style={{ fontSize: 10.5, color: 'var(--grey-1)', marginBottom: 8, lineHeight: 1.5 }}>
+          Flip per-axis if a joint moves opposite the commanded direction.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+          <button onClick={() => sendLine('Fb')}>Fb<br/>BASE</button>
+          <button onClick={() => sendLine('Fs')}>Fs<br/>SHLD</button>
+          <button onClick={() => sendLine('Fe')}>Fe<br/>ELBW</button>
+        </div>
+      </div>
+
+      <SectionHeader num="D" title="CALIBRATION" right={
+        calProps?.savedHint > 0 && (
+          <span className="mono" style={{ fontSize: 9, color: 'var(--signal-2)', letterSpacing: '0.14em' }}>
+            ★ SAVED
+          </span>
+        )
+      } />
+      <div style={{ padding: '14px 16px' }}>
+        <div className="mono" style={{ fontSize: 10, color: 'var(--grey-1)', marginBottom: 10, lineHeight: 1.5 }}>
+          Joint angle offsets, deg. Added to pot reading. Tune so reported angles match physical reality.
+        </div>
+        {[
+          { key: 'b', label: 'BASE',     angle: angles?.b },
+          { key: 's', label: 'SHOULDER', angle: angles?.s },
+          { key: 'e', label: 'ELBOW',    angle: angles?.e },
+        ].map(({ key, label, angle }) => {
+          const off = calProps?.offsets?.[key] ?? 0;
+          return (
+            <div key={key} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em' }}>{label}</span>
+                <span className="mono tabular" style={{ fontSize: 12, fontWeight: 700, color: off === 0 ? 'var(--grey-1)' : 'var(--ink)' }}>
+                  {off >= 0 ? '+' : ''}{off.toFixed(2)}°
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: 3 }}>
+                <button style={{ fontSize: 9, padding: '3px 0' }} onClick={() => calProps?.nudge?.(key, -1)}>-1</button>
+                <button style={{ fontSize: 9, padding: '3px 0' }} onClick={() => calProps?.nudge?.(key, -0.1)}>-.1</button>
+                <button style={{ fontSize: 9, padding: '3px 0' }} onClick={() => calProps?.set?.(key, 0)}>0</button>
+                <button style={{ fontSize: 9, padding: '3px 0' }} onClick={() => calProps?.nudge?.(key, +0.1)}>+.1</button>
+                <button style={{ fontSize: 9, padding: '3px 0' }} onClick={() => calProps?.nudge?.(key, +1)}>+1</button>
+              </div>
+              {isFinite(angle) && (
+                <div className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', marginTop: 3, letterSpacing: '0.05em' }}>
+                  raw {(angle - off).toFixed(2)}° &nbsp;→&nbsp; reported {angle.toFixed(2)}°
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 12 }}>
+          <button onClick={calProps?.save} style={{ fontWeight: 700, background: 'var(--paper-2)' }}>SAVE</button>
+          <button onClick={calProps?.load}>LOAD</button>
+          <button onClick={calProps?.reset}>RESET</button>
+        </div>
+        <div className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', marginTop: 6, lineHeight: 1.4 }}>
+          Changes are live but not saved. SAVE writes EEPROM. LOAD reverts to saved. RESET zeroes all + saves.
+        </div>
+      </div>
+
+      <SectionHeader num="E" title="IMU ATTITUDE" />
+      <div style={{ padding: '14px 16px' }}>
+        <ImuGauge q={imuQuat} ready={imuReady} />
+        <div className="mono" style={{ fontSize: 10, color: 'var(--grey-1)', marginTop: 10, lineHeight: 1.5 }}>
+          Body frame from BNO080.<br/>
+          Reference set on TILT entry.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginTop: 8 }}>
+          <button style={{ fontSize: 9 }} onClick={() => sendLine('tflip r')}>±ROLL</button>
+          <button style={{ fontSize: 9 }} onClick={() => sendLine('tflip p')}>±PITCH</button>
+          <button style={{ fontSize: 9 }} onClick={() => sendLine('tflip y')}>±YAW</button>
+        </div>
+      </div>
+
+      <SectionHeader num="F" title="DIAG" />
+      <div style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+        <button onClick={() => sendChar('i')}>STATUS</button>
+        <button onClick={() => sendChar('?')}>HELP</button>
+      </div>
+
+      <SectionHeader num="G" title="CAM TRACK" right={
+        <span className="mono" style={{ fontSize: 9, color: camProps?.connected ? 'var(--signal-2)' : 'var(--grey-1)', letterSpacing: '0.14em' }}>
+          {camProps?.connected ? 'LINK' : 'OFFLINE'}
+        </span>
+      } />
+      <div style={{ padding: '14px 16px' }}>
+        <div className="mono" style={{ fontSize: 10, color: 'var(--grey-1)', marginBottom: 10, lineHeight: 1.5 }}>
+          ESP32-CAM @ ({CAM_WORLD.x.toFixed(1)}, {CAM_WORLD.y.toFixed(1)}, {CAM_WORLD.z.toFixed(1)}) in · lens up
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+          {camProps?.connected ? (
+            <button onClick={camProps.disconnect} style={{ gridColumn: '1 / -1' }}>DISCONNECT CAM</button>
+          ) : (
+            <button onClick={camProps?.connect} style={{ gridColumn: '1 / -1' }}>CONNECT CAM</button>
+          )}
+        </div>
+        {camProps?.error && (
+          <div className="mono" style={{ fontSize: 10, color: 'var(--hazard-2)', background: 'rgba(255,87,34,0.08)', border: '1px solid var(--hazard-2)', padding: '4px 8px', marginBottom: 10 }}>
+            ERR · {camProps.error}
+          </div>
+        )}
+        {/* Live readouts */}
+        <div style={{ marginBottom: 8 }}>
+          <Readout label="FPS" value={camProps?.fps ? camProps.fps.toFixed(1) : '—'} />
+          <Readout label="LAST SEEN" value={
+            camProps?.lastSeen ? `${Math.max(0, ((Date.now() - camProps.lastSeen) / 1000)).toFixed(1)}s ago` : '—'
+          } />
+        </div>
+        <div className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.14em', marginBottom: 4 }}>WORLD (in)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
+          <div className="frame">
+            <span className="frame-label">X</span>
+            <div className="mono tabular" style={{ fontSize: 12, fontWeight: 700 }}>{camProps?.dronePos ? camProps.dronePos.x.toFixed(2) : '—'}</div>
+          </div>
+          <div className="frame">
+            <span className="frame-label">Y</span>
+            <div className="mono tabular" style={{ fontSize: 12, fontWeight: 700 }}>{camProps?.dronePos ? camProps.dronePos.y.toFixed(2) : '—'}</div>
+          </div>
+          <div className="frame">
+            <span className="frame-label">Z</span>
+            <div className="mono tabular" style={{ fontSize: 12, fontWeight: 700 }}>{camProps?.dronePos ? camProps.dronePos.z.toFixed(2) : '—'}</div>
+          </div>
+        </div>
+        <div className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.14em', marginBottom: 4 }}>CAM (mm)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 10 }}>
+          <div className="frame">
+            <span className="frame-label">X</span>
+            <div className="mono tabular" style={{ fontSize: 11 }}>{camProps?.rawXYZ ? camProps.rawXYZ.x.toFixed(0) : '—'}</div>
+          </div>
+          <div className="frame">
+            <span className="frame-label">Y</span>
+            <div className="mono tabular" style={{ fontSize: 11 }}>{camProps?.rawXYZ ? camProps.rawXYZ.y.toFixed(0) : '—'}</div>
+          </div>
+          <div className="frame">
+            <span className="frame-label">Z</span>
+            <div className="mono tabular" style={{ fontSize: 11 }}>{camProps?.rawXYZ ? camProps.rawXYZ.z.toFixed(0) : '—'}</div>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <button
+            className={camProps?.showFov ? 'active' : ''}
+            onClick={() => camProps?.setShowFov?.(!camProps.showFov)}
+          >
+            FOV {camProps?.showFov ? 'ON' : 'OFF'}
+          </button>
+          <button onClick={camProps?.clearTrail}>CLR TRAIL</button>
+        </div>
+        {/* ORIENTATION + SMOOTHING */}
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--hairline)' }}>
+          <div className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.14em', marginBottom: 6 }}>
+            IMAGE ROTATION
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4, marginBottom: 8 }}>
+            {[0, 90, 180, 270].map(r => (
+              <button
+                key={r}
+                className={camProps?.rotation === r ? 'active' : ''}
+                onClick={() => camProps?.setRotation?.(r)}
+                style={{ fontSize: 10 }}
+              >
+                {r}°
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 10 }}>
+            <button
+              className={camProps?.flipH ? 'active' : ''}
+              onClick={() => camProps?.setFlipH?.(!camProps.flipH)}
+              style={{ fontSize: 10 }}
+            >
+              FLIP X {camProps?.flipH ? '✓' : ''}
+            </button>
+            <button
+              className={camProps?.flipV ? 'active' : ''}
+              onClick={() => camProps?.setFlipV?.(!camProps.flipV)}
+              style={{ fontSize: 10 }}
+            >
+              FLIP Y {camProps?.flipV ? '✓' : ''}
+            </button>
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+              <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.14em' }}>SMOOTHING</span>
+              <span className="mono tabular" style={{ fontSize: 10 }}>{(camProps?.smoothAlpha ?? 0).toFixed(2)}</span>
+            </div>
+            <input
+              type="range" min="0" max="0.95" step="0.05"
+              value={camProps?.smoothAlpha ?? 0}
+              onChange={(e) => camProps?.setSmoothAlpha?.(parseFloat(e.target.value))}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+              <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.14em' }}>HEIGHT TRIM</span>
+              <span className="mono tabular" style={{ fontSize: 10 }}>{(camProps?.zOffset ?? 0).toFixed(1)}″</span>
+            </div>
+            <input
+              type="range" min="-12" max="12" step="0.25"
+              value={camProps?.zOffset ?? 0}
+              onChange={(e) => camProps?.setZOffset?.(parseFloat(e.target.value))}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+        {/* Diagnostic: cam mini-terminal */}
+        {camProps?.connected && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.14em' }}>CAM SERIAL</span>
+              <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)' }}>
+                {camProps?.rxBytes || 0} B rx
+              </span>
+            </div>
+            <div className="mono" style={{
+              fontSize: 9.5, padding: '6px 8px', background: 'var(--ink)', color: '#cfe7ff',
+              border: '1px solid var(--ink)', height: 130, overflowY: 'auto',
+              lineHeight: 1.35, whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+            }}>
+              {(camProps?.log || []).length === 0 ? (
+                <span style={{ color: '#888' }}>(waiting for data...)</span>
+              ) : (
+                (camProps.log).slice(-60).map((entry, i) => (
+                  <div key={i} style={{
+                    color: entry.kind === 'tx' ? '#ffb74d' : entry.kind === 'sys' ? '#9a9a9a' : '#cfe7ff',
+                  }}>
+                    {entry.kind === 'tx' ? '> ' : entry.kind === 'sys' ? '· ' : ''}{entry.text}
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Send command input */}
+            <CamSendInput onSend={camProps?.send} />
+            {/* Quick action buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: 4, marginTop: 6 }}>
+              <button style={{ fontSize: 10 }} onClick={() => camProps?.send?.('?')}>?</button>
+              <button style={{ fontSize: 10 }} onClick={() => camProps?.send?.('s')}>s</button>
+              <button style={{ fontSize: 10 }} onClick={camProps?.resetEsp} title="Pulse DTR to reset ESP">RST</button>
+              <button style={{ fontSize: 10 }} onClick={camProps?.releaseSignals} title="Release DTR/RTS (no reset)">RUN</button>
+              <button style={{ fontSize: 10 }} onClick={camProps?.clearLog}>CLR</button>
+            </div>
+          </div>
+        )}
+        {/* CATCH SEQUENCE */}
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--hairline)' }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--grey-1)', marginBottom: 8, lineHeight: 1.5 }}>
+            Catch goes to 5″ below drone, then up to drone. Wrist set flat + upright.
+          </div>
+          {camProps?.catchPhase ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <div className="frame" style={{ background: 'var(--hazard)', color: 'white' }}>
+                <span className="frame-label" style={{ color: 'white' }}>PHASE</span>
+                <div className="mono" style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>{camProps.catchPhase}</div>
+              </div>
+              <button onClick={camProps?.catchAbort} style={{ background: 'var(--hazard)', color: 'white', borderColor: 'var(--hazard-2)' }}>
+                ABORT
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={camProps?.catchDrone}
+              disabled={!camProps?.dronePos}
+              style={{
+                width: '100%', padding: '10px',
+                background: camProps?.dronePos ? 'var(--hazard)' : 'var(--paper-2)',
+                color: camProps?.dronePos ? 'white' : 'var(--grey-2)',
+                borderColor: camProps?.dronePos ? 'var(--hazard-2)' : 'var(--hairline)',
+                fontWeight: 700, letterSpacing: '0.1em',
+              }}
+            >
+              ► CATCH DRONE
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// IMU ATTITUDE GAUGE (artificial horizon style)
+// ============================================================================
+function ImuGauge({ q, ready }) {
+  // Compute roll/pitch/yaw from quaternion
+  const { roll, pitch, yaw } = useMemo(() => {
+    const { w, x, y, z } = q;
+    const sinr = 2 * (w*x + y*z);
+    const cosr = 1 - 2 * (x*x + y*y);
+    const r = Math.atan2(sinr, cosr);
+    let sinp = 2 * (w*y - z*x);
+    if (sinp > 1) sinp = 1;
+    if (sinp < -1) sinp = -1;
+    const p = Math.asin(sinp);
+    const siny = 2 * (w*z + x*y);
+    const cosy = 1 - 2 * (y*y + z*z);
+    const yawA = Math.atan2(siny, cosy);
+    return { roll: r * 180 / Math.PI, pitch: p * 180 / Math.PI, yaw: yawA * 180 / Math.PI };
+  }, [q]);
+
+  const size = 100;
+  const horY = pitch * 1.2; // pixels per degree-ish
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{
+        width: size, height: size, position: 'relative',
+        border: '1px solid var(--ink)', overflow: 'hidden', background: '#fff',
+      }}>
+        {/* horizon */}
+        <div style={{
+          position: 'absolute', left: -20, right: -20, top: '50%',
+          height: 200, transformOrigin: 'center',
+          transform: `translateY(${horY}px) rotate(${-roll}deg) translateY(-50%)`,
+          background: 'linear-gradient(to bottom, #c8d8ee 0%, #c8d8ee 50%, #b59670 50%, #b59670 100%)',
+        }}>
+          <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, background: 'var(--ink)' }} />
+        </div>
+        {/* center bug */}
+        <div style={{
+          position: 'absolute', left: '50%', top: '50%', width: 30, height: 1,
+          background: 'var(--hazard)', transform: 'translate(-50%, -50%)',
+        }} />
+        <div style={{
+          position: 'absolute', left: '50%', top: '50%', width: 1, height: 8,
+          background: 'var(--hazard)', transform: 'translate(-50%, -50%)',
+        }} />
+        {!ready && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'repeating-linear-gradient(45deg, rgba(154,154,154,0.5) 0 5px, transparent 5px 10px)',
+          }} />
+        )}
+      </div>
+      <div className="mono tabular" style={{ fontSize: 10, lineHeight: 1.7 }}>
+        <div>R <span style={{ fontWeight: 700 }}>{roll.toFixed(1)}°</span></div>
+        <div>P <span style={{ fontWeight: 700 }}>{pitch.toFixed(1)}°</span></div>
+        <div>Y <span style={{ fontWeight: 700 }}>{yaw.toFixed(1)}°</span></div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// CENTER VIEW
+// ============================================================================
+function CenterView({ angles, targetXYZ, setTargetXYZ, onCommit, tip, viewMode, showWorkspace, catchPath, dronePos, droneTrail, showCamFov, camStatus }) {
+  const ghostIK = targetXYZ ? ik(targetXYZ.x, targetXYZ.y, targetXYZ.z) : null;
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        <Viewer
+          angles={angles}
+          targetXYZ={targetXYZ}
+          setTargetXYZ={setTargetXYZ}
+          onCommit={onCommit}
+          viewMode={viewMode}
+          showWorkspace={showWorkspace}
+          catchPath={catchPath}
+          dronePos={dronePos}
+          droneTrail={droneTrail}
+          showCamFov={showCamFov}
+        />
+        {/* axis legend top-right */}
+        <div style={{ position: 'absolute', top: 14, right: 14, padding: '6px 10px', background: 'var(--paper)', border: '1px solid var(--ink)' }}>
+          <div className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.16em', marginBottom: 3 }}>AXES</div>
+          <div className="mono" style={{ fontSize: 10, lineHeight: 1.5 }}>
+            <span style={{ color: '#d32f2f', fontWeight: 700 }}>X</span> forward · 
+            <span style={{ color: '#2e7d32', fontWeight: 700 }}> Y</span> left · 
+            <span style={{ color: '#1565c0', fontWeight: 700 }}> Z</span> up
+          </div>
+        </div>
+        {/* Hint bottom-left */}
+        <div style={{ position: 'absolute', bottom: 12, left: 12, padding: '6px 10px', background: 'var(--paper)', border: '1px solid var(--ink)' }}>
+          <span className="mono" style={{ fontSize: 9.5, color: 'var(--grey-1)', letterSpacing: '0.1em' }}>
+            DRAG TIP TO MOVE · LMB ORBIT · WHEEL ZOOM
+          </span>
+        </div>
+
+        {/* Cam tracking HUD (bottom-right) */}
+        {camStatus?.connected && (
+          <div style={{
+            position: 'absolute', bottom: 12, right: 14,
+            background: 'var(--paper)', border: '2px solid var(--ink)',
+            padding: '8px 11px', minWidth: 210,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span className="display" style={{ fontSize: 11 }}>
+                <span style={{ color: dronePos ? 'var(--signal-2)' : 'var(--grey-2)', marginRight: 6 }}>{dronePos ? '●' : '○'}</span>
+                CAM TRACK
+              </span>
+              <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)', letterSpacing: '0.12em' }}>
+                {camStatus.fps ? camStatus.fps.toFixed(1) : '--'} fps
+              </span>
+            </div>
+            {dronePos ? (
+              <div className="mono tabular" style={{ fontSize: 11, lineHeight: 1.5 }}>
+                <span style={{ color: 'var(--grey-1)' }}>WORLD</span>{' '}
+                X <b>{dronePos.x.toFixed(2)}</b>{' '}
+                Y <b>{dronePos.y.toFixed(2)}</b>{' '}
+                Z <b>{dronePos.z.toFixed(2)}</b>{' '}
+                <span style={{ color: 'var(--grey-1)' }}>in</span>
+              </div>
+            ) : (
+              <div className="mono" style={{ fontSize: 11, color: 'var(--hazard)', letterSpacing: '0.08em' }}>
+                NO MARKER IN VIEW
+              </div>
+            )}
+            {camStatus.raw && (
+              <div className="mono tabular" style={{ fontSize: 9.5, color: 'var(--grey-1)', marginTop: 3 }}>
+                cam {camStatus.raw.x.toFixed(0)}, {camStatus.raw.y.toFixed(0)}, {camStatus.raw.z.toFixed(0)} mm
+              </div>
+            )}
+            {/* HUD catch button */}
+            {camStatus.catchPhase ? (
+              <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span className="mono" style={{ fontSize: 10, color: 'var(--hazard)', fontWeight: 700, letterSpacing: '0.12em' }}>
+                  ▶ {camStatus.catchPhase.toUpperCase()}
+                </span>
+                <button
+                  onClick={camStatus.catchAbort}
+                  style={{ marginLeft: 'auto', padding: '3px 10px', fontSize: 10, background: 'var(--hazard)', color: 'white', borderColor: 'var(--hazard-2)' }}
+                >ABORT</button>
+              </div>
+            ) : (
+              <button
+                onClick={camStatus.catchDrone}
+                disabled={!dronePos}
+                style={{
+                  marginTop: 8, width: '100%', padding: '6px 8px',
+                  background: dronePos ? 'var(--hazard)' : 'var(--paper-2)',
+                  color: dronePos ? 'white' : 'var(--grey-2)',
+                  borderColor: dronePos ? 'var(--hazard-2)' : 'var(--hairline)',
+                  fontWeight: 700, letterSpacing: '0.08em', fontSize: 11,
+                }}
+              >► CATCH DRONE</button>
+            )}
+          </div>
+        )}
+        {/* Target overlay */}
+        {targetXYZ && (
+          <div style={{
+            position: 'absolute', top: 14, left: 14,
+            background: 'var(--paper)', border: '2px solid var(--ink)',
+            padding: '10px 12px', minWidth: 200,
+          }}>
+            <div className="display" style={{ fontSize: 11, marginBottom: 6 }}>
+              <span style={{ color: 'var(--hazard)', marginRight: 6 }}>►</span>
+              TARGET
+            </div>
+            <Readout label="X" value={targetXYZ.x.toFixed(2)} unit="in" />
+            <Readout label="Y" value={targetXYZ.y.toFixed(2)} unit="in" />
+            <Readout label="Z" value={targetXYZ.z.toFixed(2)} unit="in" />
+            <div style={{ height: 1, background: 'var(--ink)', margin: '6px 0' }} />
+            {ghostIK?.ok ? (
+              <>
+                <Readout label="B→" value={ghostIK.b.toFixed(1)} unit="°" />
+                <Readout label="S→" value={ghostIK.s.toFixed(1)} unit="°" />
+                <Readout label="E→" value={ghostIK.e.toFixed(1)} unit="°" />
+              </>
+            ) : (
+              <div className="mono" style={{ fontSize: 10, color: 'var(--hazard-2)' }}>✖ {ghostIK?.err}</div>
+            )}
+            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              <button onClick={() => setTargetXYZ(null)} style={{ flex: 1 }}>ESC</button>
+              <button className="primary" disabled={!ghostIK?.ok}
+                onClick={() => onCommit(targetXYZ)} style={{ flex: 1 }}>COMMIT</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// GRAPHS TAB
+// ============================================================================
+function GraphsTab({ histRef, angles, tip, sendLine, setTargetXYZ }) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => force((x) => x + 1), 100);
+    return () => clearInterval(id);
+  }, []);
+  const h = histRef.current;
+  return (
+    <div className="scrollbar" style={{ height: '100%', overflowY: 'auto', padding: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="panel">
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--ink)', display: 'flex', justifyContent: 'space-between' }}>
+            <span className="display" style={{ fontSize: 11 }}>JOINT ANGLES</span>
+            <span className="mono" style={{ fontSize: 9, color: 'var(--grey-1)' }}>12s window</span>
+          </div>
+          <div style={{ padding: 8 }}>
+            <LineChart
+              traces={[
+                { data: h.angles.map(p => ({ t: p.t, v: p.b })), color: '#d32f2f' },
+                { data: h.angles.map(p => ({ t: p.t, v: p.s })), color: '#2e7d32' },
+                { data: h.angles.map(p => ({ t: p.t, v: p.e })), color: '#1565c0' },
+              ]}
+              yMin={-180} yMax={180} height={180}
+            />
+            <div className="mono" style={{ fontSize: 10, marginTop: 8, display: 'flex', gap: 14 }}>
+              <span style={{ color: '#d32f2f' }}>● BASE {angles.b.toFixed(1)}°</span>
+              <span style={{ color: '#2e7d32' }}>● SHLD {angles.s.toFixed(1)}°</span>
+              <span style={{ color: '#1565c0' }}>● ELBW {angles.e.toFixed(1)}°</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--ink)' }}>
+            <span className="display" style={{ fontSize: 11 }}>TIP POSITION</span>
+          </div>
+          <div style={{ padding: 8 }}>
+            <LineChart
+              traces={[
+                { data: h.tip.map(p => ({ t: p.t, v: p.x })), color: '#d32f2f' },
+                { data: h.tip.map(p => ({ t: p.t, v: p.y })), color: '#2e7d32' },
+                { data: h.tip.map(p => ({ t: p.t, v: p.z })), color: '#1565c0' },
+              ]}
+              yMin={-REACH} yMax={REACH + SHLD_OFF} height={180}
+            />
+            <div className="mono" style={{ fontSize: 10, marginTop: 8, display: 'flex', gap: 14 }}>
+              <span style={{ color: '#d32f2f' }}>● X {tip.x.toFixed(1)}″</span>
+              <span style={{ color: '#2e7d32' }}>● Y {tip.y.toFixed(1)}″</span>
+              <span style={{ color: '#1565c0' }}>● Z {tip.z.toFixed(1)}″</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--ink)' }}>
+            <span className="display" style={{ fontSize: 11 }}>WORKSPACE TRAJECTORY · top-down</span>
+          </div>
+          <TopDownTrace tip={tip} history={h.tip} sendLine={sendLine} setTargetXYZ={setTargetXYZ} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopDownTrace({ tip, history, sendLine, setTargetXYZ }) {
+  const ref = useRef(null);
+  const [dragTarget, setDragTarget] = useState(null);
+  const [hover, setHover] = useState(false);
+  const dragRef = useRef(null);
+  if (!dragRef.current) dragRef.current = { active: false, lastSent: 0 };
+
+  // Convention: top-down view with operator looking DOWN at the arm.
+  //   World +X (forward, away from operator) = screen UP (toward top)
+  //   World +Y (left in operator's frame)    = screen LEFT
+  //   World +Z (up)                          = into the page (not shown)
+  // So pixel position is:
+  //   screen_x = cx - world_y * scale     (left = +Y)
+  //   screen_y = cy - world_x * scale     (up   = +X)
+  const getMapping = () => {
+    const cv = ref.current;
+    if (!cv) return null;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    const cx = w / 2, cy = h / 2;
+    const scale = Math.min(w, h) * 0.45 / REACH;
+    return {
+      w, h, cx, cy, scale,
+      worldToPix: (wx, wy) => ({ x: cx - wy * scale, y: cy - wx * scale }),
+      pixToWorld: (px, py) => ({ x: -(py - cy) / scale, y: -(px - cx) / scale }),
+    };
+  };
+
+  const evToPix = (e) => {
+    const cv = ref.current;
+    const rect = cv.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  };
+
+  const commit = (wx, wy, immediate) => {
+    const r = Math.sqrt(wx * wx + wy * wy);
+    if (r > REACH) {
+      const k = (REACH - 0.5) / r;
+      wx *= k; wy *= k;
+    }
+    setDragTarget({ x: wx, y: wy });
+    setTargetXYZ?.({ x: wx, y: wy, z: tip.z });
+    const now = performance.now();
+    if (immediate || now - dragRef.current.lastSent >= 80) {
+      dragRef.current.lastSent = now;
+      sendLine?.(`c ${wx.toFixed(2)} ${wy.toFixed(2)} ${tip.z.toFixed(2)}`);
+    }
+  };
+
+  const onDown = (e) => {
+    if (!sendLine) return;
+    if (e.cancelable) e.preventDefault();
+    const map = getMapping(); if (!map) return;
+    const p = evToPix(e);
+    const w = map.pixToWorld(p.x, p.y);
+    dragRef.current.active = true;
+    commit(w.x, w.y, true);
+
+    const onMove = (ev) => {
+      if (!dragRef.current.active) return;
+      if (ev.cancelable) ev.preventDefault();
+      const m = getMapping(); if (!m) return;
+      const pp = evToPix(ev);
+      const ww = m.pixToWorld(pp.x, pp.y);
+      commit(ww.x, ww.y, false);
+    };
+    const onUp = (ev) => {
+      dragRef.current.active = false;
+      if (ev) {
+        const m = getMapping();
+        if (m) {
+          const pp = evToPix(ev);
+          const ww = m.pixToWorld(pp.x, pp.y);
+          commit(ww.x, ww.y, true);
+        }
+      }
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+      window.removeEventListener('touchcancel', onUp);
+      setTimeout(() => { setDragTarget(null); setTargetXYZ?.(null); }, 600);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+    window.addEventListener('touchcancel', onUp);
+  };
+
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    cv.width = w * dpr; cv.height = h * dpr;
+    const ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+    const cx = w / 2, cy = h / 2;
+    const scale = Math.min(w, h) * 0.45 / REACH;
+
+    // grid
+    ctx.strokeStyle = 'rgba(10,10,10,0.08)';
+    for (let r = 5; r <= REACH; r += 5) {
+      ctx.beginPath(); ctx.arc(cx, cy, r * scale, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+    ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#1565c0';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.arc(cx, cy, REACH * scale, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // history line — apply same convention
+    if (history.length > 1) {
+      ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for (let i = 0; i < history.length; i++) {
+        const p = history[i];
+        const px = cx - p.y * scale;
+        const py = cy - p.x * scale;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    // drag target ghost
+    if (dragTarget) {
+      const tpx = cx - dragTarget.y * scale;
+      const tpy = cy - dragTarget.x * scale;
+      const cpx = cx - tip.y * scale, cpy = cy - tip.x * scale;
+      ctx.strokeStyle = 'rgba(255, 87, 34, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cpx, cpy); ctx.lineTo(tpx, tpy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = '#ff5722';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(tpx, tpy, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(tpx, tpy, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff5722'; ctx.fill();
+    }
+
+    // current tip
+    const px = cx - tip.y * scale;
+    const py = cy - tip.x * scale;
+    ctx.fillStyle = '#ff5722';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 1; ctx.stroke();
+
+    // axis labels — match the new convention
+    ctx.fillStyle = '#0a0a0a';
+    ctx.font = '10px IBM Plex Mono';
+    ctx.fillText('+X', cx + 4, 12);    // top of canvas
+    ctx.fillText('+Y', 4, cy - 4);     // left side
+    if (sendLine) {
+      ctx.fillStyle = hover ? '#ff5722' : 'rgba(10,10,10,0.5)';
+      ctx.font = '9px IBM Plex Mono';
+      ctx.fillText(hover ? 'CLICK + DRAG TO MOVE TIP' : 'click + drag to move tip', 8, h - 8);
+    }
+  });
+
+  return (
+    <canvas
+      ref={ref}
+      onMouseDown={onDown}
+      onTouchStart={onDown}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        width: '100%', height: '320px', display: 'block',
+        cursor: sendLine ? (hover ? 'crosshair' : 'pointer') : 'default',
+        touchAction: 'none',
+      }}
+    />
+  );
+}
+
+// ============================================================================
+// CATCH SIM TAB
+// ============================================================================
+function CatchSimTab({ running, setRunning, ...viewerProps }) {
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        padding: '12px 16px', borderBottom: '1px solid var(--ink)',
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+        <span className="display" style={{ fontSize: 12 }}>DRONE INTERCEPT SIM</span>
+        <span className="mono" style={{ fontSize: 10, color: 'var(--grey-1)' }}>
+          Generates synthetic drone trajectory · arm tracks via IK
+        </span>
+        <div style={{ flex: 1 }} />
+        <button
+          className={running ? 'hazard' : 'primary'}
+          onClick={() => setRunning(!running)}
+        >
+          {running ? '■ STOP SIM' : '▶ RUN INTERCEPT'}
+        </button>
+      </div>
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        <Viewer {...viewerProps} />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// CONTROLLER TAB
+// ============================================================================
+function ControllerTab({ enabled, setEnabled, info, jointMode, setJointMode }) {
+  return (
+    <div className="scrollbar" style={{ height: '100%', overflowY: 'auto', padding: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="panel">
+          <SectionHeader num="01" title="GAMEPAD STATUS" />
+          <div style={{ padding: 16 }}>
+            <div style={{ marginBottom: 12 }}>
+              <span className="label">DEVICE</span>
+              <div className="mono" style={{ fontSize: 11, marginTop: 4, color: info ? 'var(--ink)' : 'var(--grey-1)' }}>
+                {info ? info.id : 'NO CONTROLLER DETECTED'}
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <span className="label">CONTROL</span>
+              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                <button
+                  className={enabled ? 'active' : ''}
+                  style={{ flex: 1 }}
+                  onClick={() => setEnabled(!enabled)}
+                >{enabled ? '■ ACTIVE' : '▶ ENABLE'}</button>
+              </div>
+            </div>
+            <div>
+              <span className="label">STICK MODE</span>
+              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                <button
+                  className={!jointMode ? 'active' : ''}
+                  style={{ flex: 1 }}
+                  onClick={() => setJointMode(false)}
+                >XYZ</button>
+                <button
+                  className={jointMode ? 'active' : ''}
+                  style={{ flex: 1 }}
+                  onClick={() => setJointMode(true)}
+                >JOINT</button>
+              </div>
+            </div>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--grey-1)', marginTop: 10, lineHeight: 1.5 }}>
+              Toggle with BACK button on controller, or buttons above.
+            </div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <SectionHeader num="02" title="MAPPING" />
+          <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 14px', fontSize: 11 }}>
+            <span className="kbd">A</span><span>E-stop</span>
+            <span className="kbd">B</span><span>Idle dance</span>
+            <span className="kbd">X</span><span>Greet dance</span>
+            <span className="kbd">Y</span><span>Showcase dance</span>
+            <span className="kbd">LB</span><span>Combat dance</span>
+            <span className="kbd">RB</span><span>Chase dance</span>
+            <span className="kbd">DPad ↑/↓</span><span>Speed +/−</span>
+            <span className="kbd">DPad ←</span><span>Pose Home</span>
+            <span className="kbd">DPad →</span><span>Pose Extended</span>
+            <span className="kbd">Start</span><span>E-stop</span>
+            <span className="kbd">Back</span><span>Toggle XYZ/JOINT mode</span>
+            <span className="kbd">L Stick</span><span>{jointMode ? 'Base / Shoulder' : 'X / Y'}</span>
+            <span className="kbd">R Stick</span><span>{jointMode ? 'Elbow' : '—'}</span>
+            <span className="kbd">RT/LT</span><span>{jointMode ? '—' : 'Z up / down'}</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ marginTop: 14 }} className="panel">
+        <SectionHeader num="03" title="NOTES" />
+        <div style={{ padding: '14px 16px', fontSize: 11, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+          <div style={{ marginBottom: 10 }}>
+            Connect an Xbox-compatible controller via USB or Bluetooth, then click ENABLE above. Buttons above
+            confirm the device is recognized.
+          </div>
+          <div>
+            <strong>XYZ mode</strong> requires the arm to be in <span className="kbd">XYZ</span> mode (press K
+            on the keyboard or click XYZ in the mode panel). <strong>JOINT mode</strong> works in MANUAL or DEBUG mode.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// RIGHT PANEL (mode-specific)
+// ============================================================================
+function RightPanel(props) {
+  const { mode, sendChar, sendLine, setMode } = props;
+  return (
+    <div className="panel scrollbar" style={{ height: '100%', overflowY: 'auto', borderLeft: 0 }}>
+      <SectionHeader num="F" title="MODE" />
+      <div style={{ padding: '14px 16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+          {[['MANUAL','M'],['DEBUG','B'],['HEIGHT','H'],['XYZ','K'],['DANCE','D'],['TILT','T']].map(([n, c]) => (
+            <button
+              key={c}
+              className={mode === n ? 'active' : ''}
+              onClick={() => { sendChar(c); setMode(n); }}
+              style={{ padding: '8px 4px' }}
+            >{n}</button>
+          ))}
+        </div>
+      </div>
+
+      <SectionHeader num="G" title="POSES" />
+      <div style={{ padding: '14px 16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+          <button onClick={() => sendChar('6')}><span className="kbd" style={{ marginRight: 6 }}>6</span> HOME</button>
+          <button onClick={() => sendChar('7')}><span className="kbd" style={{ marginRight: 6 }}>7</span> READY</button>
+          <button onClick={() => sendChar('8')}><span className="kbd" style={{ marginRight: 6 }}>8</span> CATCH</button>
+          <button onClick={() => sendChar('9')}><span className="kbd" style={{ marginRight: 6 }}>9</span> EXTEND</button>
+          <button onClick={() => sendChar('0')} style={{ gridColumn: 'span 2' }}>
+            <span className="kbd" style={{ marginRight: 6 }}>0</span> RETRACT
+          </button>
+        </div>
+      </div>
+
+      <SectionHeader num="H" title={`${mode} CONTROLS`} />
+      <div style={{ padding: '14px 16px' }}>
+        {mode === 'MANUAL' && <ManualPanel {...props} />}
+        {mode === 'DEBUG' && <ManualPanel {...props} />}
+        {mode === 'DANCE' && <DancePanel {...props} />}
+        {mode === 'HEIGHT' && <HeightPanel {...props} />}
+        {mode === 'XYZ' && <XYZPanel {...props} />}
+        {mode === 'TILT' && <TiltPanel {...props} />}
+      </div>
+    </div>
+  );
+}
+
+// Simple click-jog button. Used for discrete one-shot jogs and pose buttons.
+// onClick fires once per press. (XYZ nudge buttons use this.)
+function JogBtn({ onClick, children, color }) {
+  return (
+    <button onMouseDown={onClick} style={{
+      padding: '12px 8px',
+      fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, fontWeight: 700,
+      letterSpacing: '0.06em',
+      borderColor: color || 'var(--ink)',
+      color: color || 'var(--ink)',
+    }}>{children}</button>
+  );
+}
+
+// Hold-to-jog button. Press and hold = repeats sendChar(char) at 90ms while
+// held. The firmware's manual-pulse handler keeps the motor running for
+// ~500ms per char, so successive chars chain into smooth-ish continuous
+// motion. Releases: stop sending; firmware's last pulse times out on its own.
+// Compatible with v3 firmware (no `j` jog command needed).
+function HoldJogBtn({ char, label, color, sendChar }) {
+  const heldRef = useRef(false);
+  const intervalRef = useRef(null);
+
+  const start = (e) => {
+    if (e?.cancelable) e.preventDefault();
+    if (heldRef.current) return;
+    heldRef.current = true;
+    sendChar(char);
+    intervalRef.current = setInterval(() => sendChar(char), 90);
+  };
+  const stop = (e) => {
+    if (e?.cancelable) e.preventDefault();
+    heldRef.current = false;
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+  };
+
+  useEffect(() => () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  }, []);
+
+  return (
+    <button
+      onMouseDown={start}
+      onMouseUp={stop}
+      onMouseLeave={stop}
+      onTouchStart={start}
+      onTouchEnd={stop}
+      onTouchCancel={stop}
+      style={{
+        padding: '12px 8px',
+        fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, fontWeight: 700,
+        letterSpacing: '0.06em', userSelect: 'none', touchAction: 'none',
+        borderColor: color || 'var(--ink)',
+        color: color || 'var(--ink)',
+      }}>
+      {label}
+    </button>
+  );
+}
+
+function ManualPanel({ sendChar, sendLine, speed }) {
+  return (
+    <>
+      <div className="label" style={{ marginBottom: 6 }}>BASE</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
+        <HoldJogBtn char="q" sendChar={sendChar} label="◀ HOLD" />
+        <HoldJogBtn char="1" sendChar={sendChar} label="HOLD ▶" />
+      </div>
+      <div className="label" style={{ marginBottom: 6 }}>SHOULDER</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
+        <HoldJogBtn char="w" sendChar={sendChar} label="◀ HOLD" />
+        <HoldJogBtn char="2" sendChar={sendChar} label="HOLD ▶" />
+      </div>
+      <div className="label" style={{ marginBottom: 6 }}>ELBOW</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 14 }}>
+        <HoldJogBtn char="e" sendChar={sendChar} label="◀ HOLD" />
+        <HoldJogBtn char="3" sendChar={sendChar} label="HOLD ▶" />
+      </div>
+      <div style={{ height: 1, background: 'var(--hairline)', margin: '8px 0' }} />
+      <div className="label" style={{ marginBottom: 6 }}>WRIST ROLL</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 10 }}>
+        <HoldJogBtn char="f" sendChar={sendChar} label="◀ HOLD" />
+        <HoldJogBtn char="4" sendChar={sendChar} label="HOLD ▶" />
+      </div>
+      <div className="label" style={{ marginBottom: 6 }}>WRIST PITCH</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+        <HoldJogBtn char="t" sendChar={sendChar} label="◀ HOLD" />
+        <HoldJogBtn char="5" sendChar={sendChar} label="HOLD ▶" />
+      </div>
+    </>
+  );
+}
+
+function DancePanel({ sendChar, sendLine, activeDance, setActiveDance, loop }) {
+  return (
+    <>
+      <div className="label" style={{ marginBottom: 6 }}>ROUTINE</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 14 }}>
+        {DANCE_NAMES.map((n, i) => (
+          <button
+            key={n}
+            className={activeDance === i ? 'active' : ''}
+            onClick={() => setActiveDance(i)}
+            style={{ fontSize: 10, padding: '8px 4px' }}
+          >{n.toUpperCase()}</button>
+        ))}
+      </div>
+      <button className="primary" onClick={() => sendChar('G')} style={{ width: '100%', padding: 14, marginBottom: 8 }}>
+        ▶ GO
+      </button>
+      <button
+        className={loop ? 'active' : ''}
+        onClick={() => sendChar('L')}
+        style={{ width: '100%', padding: 10, marginBottom: 14 }}
+      >LOOP · {loop ? 'ON' : 'OFF'}</button>
+      <button className="hazard" onClick={() => sendChar('X')} style={{ width: '100%' }}>
+        ABORT
+      </button>
+    </>
+  );
+}
+
+function HeightPanel({ sendLine }) {
+  const [h, setH] = useState('');
+  const submit = () => {
+    const v = parseFloat(h);
+    if (isNaN(v) || v <= 0 || v > REACH + SHLD_OFF) return;
+    sendLine(h); setH('');
+  };
+  return (
+    <>
+      <div className="label" style={{ marginBottom: 6 }}>HEIGHT (Z, base frame)</div>
+      <input
+        type="number" step="0.5" min="0.5" max={REACH + SHLD_OFF}
+        value={h}
+        onChange={(e) => setH(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+        placeholder="inches"
+      />
+      <button className="primary" onClick={submit} style={{ width: '100%', marginTop: 8 }}>EXECUTE</button>
+      <div className="mono" style={{ fontSize: 10, color: 'var(--grey-1)', marginTop: 12, lineHeight: 1.5 }}>
+        RANGE 0—{(REACH + SHLD_OFF).toFixed(1)} in<br/>
+        Tip directly above base axis.
+      </div>
+    </>
+  );
+}
+
+function AxisSlider({ axis, label, value, min, max, onInput, onRelease, color }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 8, height: 8, background: color }} />
+          <span className="display" style={{ fontSize: 11, color }}>{label}</span>
+        </span>
+        <span className="mono tabular" style={{ fontSize: 13, fontWeight: 700, color }}>
+          {value >= 0 ? '+' : ''}{value.toFixed(2)}″
+        </span>
+      </div>
+      <input
+        type="range"
+        className={`axis-slider ${axis}`}
+        min={min} max={max} step={0.25}
+        value={value}
+        onChange={(e) => onInput(+e.target.value)}
+        onMouseUp={onRelease}
+        onTouchEnd={onRelease}
+      />
+      <div className="mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--grey-1)' }}>
+        <span>{min}</span><span>0</span><span>+{max}</span>
+      </div>
+    </div>
+  );
+}
+
+function XYZPanel({ sendLine, sendChar, fkTip, setTargetXYZ, targetXYZ }) {
+  const [local, setLocal] = useState({ x: fkTip.x, y: fkTip.y, z: fkTip.z });
+  useEffect(() => {
+    if (!targetXYZ) setLocal({ x: fkTip.x, y: fkTip.y, z: fkTip.z });
+  }, [fkTip.x, fkTip.y, fkTip.z, targetXYZ]);
+  const update = (axis, v) => {
+    const next = { ...local, [axis]: v };
+    setLocal(next);
+    setTargetXYZ(next);
+  };
+  const commit = () => {
+    const r = ik(local.x, local.y, local.z);
+    if (!r.ok) return;
+    sendLine(`c ${local.x.toFixed(2)} ${local.y.toFixed(2)} ${local.z.toFixed(2)}`);
+    setTimeout(() => setTargetXYZ(null), 350);
+  };
+  const ghostIk = ik(local.x, local.y, local.z);
+  return (
+    <>
+      <div className="label" style={{ marginBottom: 10 }}>CART. POSITION</div>
+      <AxisSlider axis="x" label="X · FORWARD" color="#d32f2f"
+        value={local.x} min={-REACH} max={REACH}
+        onInput={(v) => update('x', v)} onRelease={commit} />
+      <AxisSlider axis="y" label="Y · LEFT" color="#2e7d32"
+        value={local.y} min={-REACH} max={REACH}
+        onInput={(v) => update('y', v)} onRelease={commit} />
+      <AxisSlider axis="z" label="Z · UP" color="#1565c0"
+        value={local.z} min={0} max={REACH + SHLD_OFF}
+        onInput={(v) => update('z', v)} onRelease={commit} />
+      {!ghostIk.ok && (
+        <div className="mono" style={{
+          padding: '6px 10px', marginBottom: 10,
+          border: '1px solid var(--hazard)', background: 'rgba(255,87,34,0.08)',
+          fontSize: 11, color: 'var(--hazard-2)',
+        }}>✖ IK: {ghostIk.err}</div>
+      )}
+      <div style={{ height: 1, background: 'var(--ink)', margin: '14px 0' }} />
+      <div className="label" style={{ marginBottom: 6 }}>STEP NUDGE</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 4 }}>
+        <div />
+        <JogBtn onClick={() => sendChar('w')} color="#d32f2f">+X</JogBtn>
+        <div />
+        <JogBtn onClick={() => sendChar('a')} color="#2e7d32">+Y</JogBtn>
+        <JogBtn onClick={() => sendChar('s')} color="#d32f2f">−X</JogBtn>
+        <JogBtn onClick={() => sendChar('d')} color="#2e7d32">−Y</JogBtn>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
+        <JogBtn onClick={() => sendChar('q')} color="#1565c0">+Z</JogBtn>
+        <JogBtn onClick={() => sendChar('e')} color="#1565c0">−Z</JogBtn>
+      </div>
+    </>
+  );
+}
+
+function TiltPanel({ sendChar, sendLine, imuReady, fkTip }) {
+  return (
+    <>
+      {!imuReady && (
+        <div style={{ padding: 10, border: '2px solid var(--hazard)', marginBottom: 12, background: 'rgba(255,87,34,0.05)' }}>
+          <div className="label" style={{ color: 'var(--hazard-2)', marginBottom: 4 }}>! IMU OFFLINE</div>
+          <div className="mono" style={{ fontSize: 10.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>
+            Wiring: SDA=18 SCL=19 (Wire). Tilt mode requires the IMU.
+          </div>
+        </div>
+      )}
+      <button className="primary" onClick={() => sendChar('h')} style={{ width: '100%', padding: 16, marginBottom: 8 }}>
+        ⟲ HOLD HERE
+      </button>
+      <div className="mono" style={{ fontSize: 10.5, lineHeight: 1.6, color: 'var(--ink-2)', marginBottom: 12 }}>
+        Captures current tip XYZ as world target + snaps a fresh IMU reference.
+        Arm will counter-rotate against boat motion to hold the tip in world coords.
+      </div>
+      <div className="frame" style={{ marginBottom: 10 }}>
+        <span className="frame-label">CURRENT TIP</span>
+        <Readout label="X" value={fkTip.x.toFixed(2)} unit="in" />
+        <Readout label="Y" value={fkTip.y.toFixed(2)} unit="in" />
+        <Readout label="Z" value={fkTip.z.toFixed(2)} unit="in" />
+      </div>
+      <div className="label" style={{ marginBottom: 6 }}>SIGN CALIBRATION</div>
+      <div className="mono" style={{ fontSize: 10, color: 'var(--grey-1)', marginBottom: 6, lineHeight: 1.5 }}>
+        If the arm corrects opposite to the tilt direction, flip that axis sign.
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 12 }}>
+        <button onClick={() => sendLine('tflip r')}>±ROLL</button>
+        <button onClick={() => sendLine('tflip p')}>±PITCH</button>
+        <button onClick={() => sendLine('tflip y')}>±YAW</button>
+      </div>
+      <button className="hazard" onClick={() => sendChar('X')} style={{ width: '100%' }}>CLEAR HOLD</button>
+    </>
+  );
+}
+
+// ============================================================================
+// TERMINAL
+// ============================================================================
+function Terminal({ lines, termRef, cmdInput, setCmdInput, onSubmit, streamOn }) {
+  return (
+    <div style={{
+      background: 'var(--paper)',
+      borderTop: '1px solid var(--ink)',
+      display: 'flex', flexDirection: 'column', minHeight: 0,
+    }}>
+      <div style={{
+        padding: '6px 14px', borderBottom: '1px solid var(--ink)',
+        background: 'var(--paper-2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className="display" style={{ fontSize: 11 }}>SERIAL CONSOLE</span>
+          <span className="chip" style={{ height: 18, fontSize: 9 }}>{lines.length} LINES</span>
+        </div>
+        <span className="mono" style={{ fontSize: 9.5, color: 'var(--grey-1)' }}>
+          STREAM {streamOn ? '● ON' : '○ OFF'} · TX/RX
+        </span>
+      </div>
+      <div ref={termRef} className="mono scrollbar" style={{
+        flex: 1, overflowY: 'auto', padding: '6px 14px',
+        fontSize: 11, lineHeight: 1.5,
+        background: '#fff',
+      }}>
+        {lines.map((l, i) => (
+          <div key={i} className="terminal-line" style={{
+            color: l.t === 'tx' ? 'var(--hazard-2)' : l.t === 'err' ? 'var(--hazard-2)'
+              : l.t === 'sys' ? 'var(--plot)' : 'var(--ink)',
+          }}>
+            <span style={{ color: 'var(--grey-1)', marginRight: 8, fontWeight: 700 }}>
+              {l.t === 'tx' ? '►' : l.t === 'err' ? '✖' : l.t === 'sys' ? '◆' : '◦'}
+            </span>
+            {l.s}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', borderTop: '1px solid var(--ink)' }}>
+        <span style={{
+          padding: '0 12px', fontFamily: 'IBM Plex Mono, monospace',
+          color: 'var(--hazard)', fontSize: 13, fontWeight: 700,
+        }}>►</span>
+        <input
+          value={cmdInput}
+          onChange={(e) => setCmdInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && cmdInput.trim()) onSubmit(cmdInput.trim()); }}
+          placeholder="raw command (e.g. c 10 0 25, dn 2, tflip r)"
+          style={{ border: 'none', background: 'transparent', padding: '10px 0' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MOUNT
+// ============================================================================
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
