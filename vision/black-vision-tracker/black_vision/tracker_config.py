@@ -61,6 +61,7 @@ class AnchorConfig:
     position_m: tuple[float, float, float] = (0.0, 0.0, 0.0)
     poll_interval_s: float = 0.08
     enabled: bool = True
+    role: str = "base"
 
     def normalized(self) -> "AnchorConfig":
         return AnchorConfig(
@@ -70,6 +71,7 @@ class AnchorConfig:
             position_m=_coerce_vector3(self.position_m),
             poll_interval_s=max(0.02, float(self.poll_interval_s)),
             enabled=bool(self.enabled),
+            role=_normalize_anchor_role(self.role),
         )
 
 
@@ -98,9 +100,16 @@ class TrackerConfig:
     uwb_network_id: str = "REYAX123"
     uwb_password: str = "00000000000000000000000000000000"
     anchor_poll_payload: str = "PING"
+    anchor_send_mode: str = "payload"
     anchor_response_timeout_s: float = 0.15
     auto_configure_anchors: bool = True
     enable_rssi: bool = False
+    prefer_uwb: bool = True
+    minimum_uwb_anchors: int = 3
+    uwb_stale_after_s: float = 0.5
+    vision_fallback_distance_m: float = 1.5
+    max_uwb_residual_m: float = 0.35
+    max_hybrid_residual_m: float = 0.45
 
     def normalized(self) -> "TrackerConfig":
         detector = self.detector.normalized()
@@ -127,9 +136,16 @@ class TrackerConfig:
             uwb_network_id=_normalize_ascii_id(self.uwb_network_id, fallback="REYAX123"),
             uwb_password=_normalize_password(self.uwb_password),
             anchor_poll_payload=_normalize_payload(self.anchor_poll_payload),
+            anchor_send_mode=_normalize_anchor_send_mode(self.anchor_send_mode),
             anchor_response_timeout_s=max(0.05, float(self.anchor_response_timeout_s)),
             auto_configure_anchors=bool(self.auto_configure_anchors),
             enable_rssi=bool(self.enable_rssi),
+            prefer_uwb=bool(self.prefer_uwb),
+            minimum_uwb_anchors=max(1, int(self.minimum_uwb_anchors)),
+            uwb_stale_after_s=max(0.05, float(self.uwb_stale_after_s)),
+            vision_fallback_distance_m=max(0.05, float(self.vision_fallback_distance_m)),
+            max_uwb_residual_m=max(0.0, float(self.max_uwb_residual_m)),
+            max_hybrid_residual_m=max(0.0, float(self.max_hybrid_residual_m)),
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -160,9 +176,16 @@ def load_tracker_config(path: str | Path) -> TrackerConfig:
         uwb_network_id=payload.get("uwb_network_id", "REYAX123"),
         uwb_password=payload.get("uwb_password", "00000000000000000000000000000000"),
         anchor_poll_payload=payload.get("anchor_poll_payload", "PING"),
+        anchor_send_mode=payload.get("anchor_send_mode", "payload"),
         anchor_response_timeout_s=payload.get("anchor_response_timeout_s", 0.15),
         auto_configure_anchors=payload.get("auto_configure_anchors", True),
         enable_rssi=payload.get("enable_rssi", False),
+        prefer_uwb=payload.get("prefer_uwb", True),
+        minimum_uwb_anchors=payload.get("minimum_uwb_anchors", 3),
+        uwb_stale_after_s=payload.get("uwb_stale_after_s", 0.5),
+        vision_fallback_distance_m=payload.get("vision_fallback_distance_m", 1.5),
+        max_uwb_residual_m=payload.get("max_uwb_residual_m", 0.35),
+        max_hybrid_residual_m=payload.get("max_hybrid_residual_m", 0.45),
     ).normalized()
 
 
@@ -181,7 +204,24 @@ def _coerce_vector3(value: tuple[float, float, float] | list[float]) -> tuple[fl
 
 def _normalize_ascii_id(value: str, *, fallback: str) -> str:
     trimmed = (value or fallback).strip() or fallback
-    return trimmed[:8].ljust(8, "0")
+    ascii_value = trimmed.encode("ascii", errors="ignore").decode("ascii")
+    if not ascii_value:
+        ascii_value = fallback
+    return ascii_value[:8]
+
+
+def _normalize_anchor_role(value: str) -> str:
+    normalized = (value or "base").strip().lower()
+    if normalized not in {"base", "aux", "tip"}:
+        return "base"
+    return normalized
+
+
+def _normalize_anchor_send_mode(value: str) -> str:
+    normalized = (value or "payload").strip().lower()
+    if normalized not in {"payload", "address_only"}:
+        return "payload"
+    return normalized
 
 
 def _normalize_password(value: str) -> str:

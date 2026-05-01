@@ -15,4 +15,4 @@ This folder contains the camera and tracking pieces for the drone-catching syste
 
 ## Recommended Workflow
 
-Use the ESP32-CAM as the image source, but keep heavy tracking and sensor fusion in `black-vision-tracker/` on the host computer. That gives you more room for OpenCV, logging, calibration, and future fusion with extra UWB anchors.
+Use the ESP32-CAM as the image source, but keep heavy tracking and sensor fusion in `black-vision-tracker/` on the host computer. The current host pipeline is UWB-first: it prefers fresh multi-anchor ranging, falls back to hybrid UWB plus vision when only partial anchors are alive, and only uses vision-only tracking when UWB is unavailable or stale.

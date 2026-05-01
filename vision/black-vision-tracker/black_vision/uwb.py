@@ -10,16 +10,6 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only on hardware run
     serial = None
 
 
-ANCHOR_RCV_RE = re.compile(
-    r"^\+ANCHOR_RCV\s*=\s*"
-    r"(?P<tag>[^,]+)\s*,\s*"
-    r"(?P<payload_len>\d+)\s*,\s*"
-    r"(?P<payload>[^,]*)\s*,\s*"
-    r"(?P<distance_cm>-?\d+(?:\.\d+)?)\s*cm"
-    r"(?:\s*,\s*(?P<rssi>.+))?\s*$"
-)
-
-
 @dataclass(slots=True)
 class AnchorMeasurement:
     anchor_id: str
@@ -40,28 +30,62 @@ def parse_anchor_rcv_line(
     anchor_address: str,
     timestamp_s: float | None = None,
 ) -> AnchorMeasurement | None:
-    match = ANCHOR_RCV_RE.match(line.strip())
-    if not match:
+    stripped = line.strip()
+    if not stripped.startswith("+ANCHOR_RCV"):
         return None
 
-    rssi_group = match.group("rssi")
-    rssi: float | None = None
-    if rssi_group:
-        rssi_digits = re.search(r"-?\d+(?:\.\d+)?", rssi_group)
-        if rssi_digits:
-            rssi = float(rssi_digits.group(0))
+    _, separator, payload = stripped.partition("=")
+    if not separator:
+        return None
+
+    parts = [part.strip() for part in payload.split(",")]
+    if len(parts) < 2:
+        return None
+
+    tag_address = parts[0]
+    message_payload = ""
+    payload_length = 0
+    distance_field = ""
+    rssi_field = ""
+
+    if len(parts) >= 4 and parts[1].isdigit():
+        payload_length = int(parts[1])
+        message_payload = parts[2]
+        distance_field = parts[3]
+        rssi_field = parts[4] if len(parts) >= 5 else ""
+    else:
+        distance_field = parts[1]
+        rssi_field = parts[2] if len(parts) >= 3 else ""
+
+    distance_cm = _parse_distance_cm(distance_field)
+    if distance_cm is None:
+        return None
 
     return AnchorMeasurement(
         anchor_id=anchor_id,
         anchor_address=anchor_address,
-        tag_address=match.group("tag").strip(),
-        payload=match.group("payload").strip(),
-        payload_length=int(match.group("payload_len")),
-        distance_m=float(match.group("distance_cm")) / 100.0,
-        rssi=rssi,
+        tag_address=tag_address,
+        payload=message_payload,
+        payload_length=payload_length,
+        distance_m=distance_cm / 100.0,
+        rssi=_parse_rssi(rssi_field),
         timestamp_s=time.monotonic() if timestamp_s is None else timestamp_s,
-        raw_line=line.rstrip(),
+        raw_line=stripped,
     )
+
+
+def _parse_distance_cm(value: str) -> float | None:
+    distance_match = re.search(r"-?\d+(?:\.\d+)?", value)
+    if distance_match is None:
+        return None
+    return float(distance_match.group(0))
+
+
+def _parse_rssi(value: str) -> float | None:
+    rssi_match = re.search(r"-?\d+(?:\.\d+)?", value)
+    if rssi_match is None:
+        return None
+    return float(rssi_match.group(0))
 
 
 class ReyaxSerialAnchor:
@@ -163,11 +187,15 @@ class ReyaxSerialAnchor:
         *,
         tag_address: str,
         payload: str,
+        send_mode: str,
         response_timeout_s: float,
     ) -> AnchorMeasurement | None:
-        payload_ascii = payload.encode("ascii", errors="ignore").decode("ascii")
-        payload_ascii = payload_ascii[:12]
-        command = f"AT+ANCHOR_SEND={tag_address},{len(payload_ascii)},{payload_ascii}"
+        if send_mode == "address_only":
+            command = f"AT+ANCHOR_SEND={tag_address}"
+        else:
+            payload_ascii = payload.encode("ascii", errors="ignore").decode("ascii")
+            payload_ascii = payload_ascii[:12]
+            command = f"AT+ANCHOR_SEND={tag_address},{len(payload_ascii)},{payload_ascii}"
         self.send_command(command)
 
         deadline = time.monotonic() + response_timeout_s

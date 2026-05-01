@@ -291,6 +291,7 @@ def run_track(args: argparse.Namespace) -> None:
                 measurement = anchor.poll_distance(
                     tag_address=tracker_config.drone_tag.address,
                     payload=tracker_config.anchor_poll_payload,
+                    send_mode=tracker_config.anchor_send_mode,
                     response_timeout_s=tracker_config.anchor_response_timeout_s,
                 )
                 next_poll_at[anchor_config.anchor_id] = now + anchor_config.poll_interval_s

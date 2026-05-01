@@ -16,3 +16,21 @@ def test_parse_anchor_rcv_line_supports_distance_output() -> None:
     assert measurement.distance_m == 1.83
     assert measurement.rssi == -78.0
     assert measurement.timestamp_s == 12.0
+
+
+def test_parse_anchor_rcv_line_supports_short_arm_v4_output() -> None:
+    measurement = parse_anchor_rcv_line(
+        "+ANCHOR_RCV=99,183,-78",
+        anchor_id="arm_anchor",
+        anchor_address="REYAX001",
+        timestamp_s=15.0,
+    )
+
+    assert measurement is not None
+    assert measurement.anchor_id == "arm_anchor"
+    assert measurement.tag_address == "99"
+    assert measurement.payload == ""
+    assert measurement.payload_length == 0
+    assert measurement.distance_m == 1.83
+    assert measurement.rssi == -78.0
+    assert measurement.timestamp_s == 15.0

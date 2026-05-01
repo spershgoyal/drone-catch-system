@@ -21,32 +21,44 @@
   },
   "anchors": [
     {
-      "anchor_id": "arm_main",
-      "address": "REYAX001",
+      "anchor_id": "arm_base",
+      "address": "1",
       "serial_port": "/dev/ttyUSB0",
-      "position_m": [0.0, 0.0, 0.0],
+      "position_m": [0.0, 0.0, 0.05],
       "poll_interval_s": 0.08,
-      "enabled": true
+      "enabled": true,
+      "role": "base"
     },
     {
-      "anchor_id": "left_fix",
-      "address": "REYAX002",
+      "anchor_id": "leftbase",
+      "address": "2",
       "serial_port": "/dev/ttyUSB1",
-      "position_m": [-0.35, 0.0, 0.0],
+      "position_m": [-0.35, 0.22, 0.0],
       "poll_interval_s": 0.12,
-      "enabled": false
+      "enabled": true,
+      "role": "base"
     },
     {
-      "anchor_id": "rightfix",
-      "address": "REYAX003",
+      "anchor_id": "rightbas",
+      "address": "3",
       "serial_port": "/dev/ttyUSB2",
-      "position_m": [0.35, 0.0, 0.0],
+      "position_m": [0.35, 0.22, 0.0],
       "poll_interval_s": 0.12,
-      "enabled": false
+      "enabled": true,
+      "role": "base"
+    },
+    {
+      "anchor_id": "tipanchr",
+      "address": "4",
+      "serial_port": "/dev/ttyUSB3",
+      "position_m": [0.0, 0.0, 0.25],
+      "poll_interval_s": 0.08,
+      "enabled": false,
+      "role": "tip"
     }
   ],
   "drone_tag": {
-    "address": "DRONE001"
+    "address": "99"
   },
   "gripper_position_m": [0.0, 0.0, 0.25],
   "capture_radius_m": 0.15,
@@ -56,10 +68,17 @@
   "serial_baud_rate": 115200,
   "uwb_channel": 5,
   "uwb_bandwidth": 1,
-  "uwb_network_id": "REYAX123",
+  "uwb_network_id": "ARM01",
   "uwb_password": "00000000000000000000000000000000",
   "anchor_poll_payload": "PING",
+  "anchor_send_mode": "address_only",
   "anchor_response_timeout_s": 0.15,
   "auto_configure_anchors": true,
-  "enable_rssi": false
+  "enable_rssi": false,
+  "prefer_uwb": true,
+  "minimum_uwb_anchors": 3,
+  "uwb_stale_after_s": 0.5,
+  "vision_fallback_distance_m": 1.5,
+  "max_uwb_residual_m": 0.35,
+  "max_hybrid_residual_m": 0.45
 }

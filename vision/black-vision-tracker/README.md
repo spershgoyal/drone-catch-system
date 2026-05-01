@@ -21,7 +21,8 @@ This approach is usually the right fit for "detect black" because lighting and e
 - calibration UI with trackbars
 - JSON config save/load
 - Reyax `RYUW122_Lite` UART polling for distance measurements
-- fused camera-bearing + UWB ranging for 3D arm-frame tracking
+- UWB-first tracking that prefers 3-anchor trilateration before falling back to vision
+- fused camera-bearing + UWB ranging for 3D arm-frame tracking when only partial UWB is available
 - configurable grab radius for drone capture
 
 ## Project Layout
@@ -83,6 +84,8 @@ cp ./tracker_config.example.json ./tracker_config.json
 black-vision track --tracker-config ./tracker_config.json --print-json
 ```
 
+The default example is arranged as a UWB-first layout with three enabled fixed anchors, an optional disabled tip anchor placeholder, numeric arm-v4-style addresses, and `anchor_send_mode` set to `address_only`.
+
 ## Commands
 
 ### Detect
@@ -137,8 +140,11 @@ Controls:
 
 ## Notes for Reyax RYUW122_Lite
 
-- Distance is reported on the anchor side through `+ANCHOR_RCV=...,...,...,<distance cm>`.
+- The tracker accepts both older long-form replies like `+ANCHOR_RCV=DRONE001,4,PING,183 cm,-78 dBm` and the shorter arm-v4 format `+ANCHOR_RCV=99,183,-78`.
+- The tracker can poll tags with either the older payload form `AT+ANCHOR_SEND=<tag>,<len>,<payload>` or the arm-v4 short form `AT+ANCHOR_SEND=<tag>`.
 - The anchor must actively poll the drone tag with `AT+ANCHOR_SEND=...`.
+- Fresh UWB anchors are preferred over vision. If at least three non-tip anchors are fresh, the tracker does pure trilateration first.
+- If UWB drops below the configured freshness threshold, the tracker falls back to a camera-only estimate using the last known depth or `vision_fallback_distance_m`.
 - If you use multiple anchors, stagger their polling so UWB transmissions do not overlap.
 
 ## Config Fields
@@ -161,10 +167,12 @@ The saved JSON config includes:
 The tracker JSON adds:
 
 - camera intrinsics or horizontal field of view
-- anchor UART ports and arm-frame positions
+- anchor UART ports, arm-frame positions, and anchor roles such as `base` or `tip`
+- anchor send mode for long-form or short-form Reyax polling
 - drone tag address
 - Reyax network / channel / bandwidth settings
 - gripper position and capture radius
+- UWB freshness, residual rejection, and fallback-distance settings
 
 ## Run Tests
 

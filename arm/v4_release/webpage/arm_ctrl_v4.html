@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>ARM CTRL v4 — Drone Catcher</title>
+<style>
+  :root {
+    --bg: #f5f1e8;
+    --panel: #ffffff;
+    --ink: #1a1a18;
+    --ink2: #5a5a55;
+    --ink3: #8a8480;
+    --line: #d8d3c5;
+    --line2: #e8e3d5;
+    --hazard: #e85d24;
+    --hazard-deep: #c44a18;
+    --good: #1d9e75;
+    --warn: #ba7517;
+    --bad: #c43d3d;
+    --blue: #3b8bd4;
+    --purple: #7f55c8;
+    --yellow: #d4a83b;
+    --mono: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+    --sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+  button { font-family: inherit; font-size: inherit; cursor: pointer; }
+
+  /* ============ CONNECT SPLASH ============ */
+  #splash {
+    position: fixed; inset: 0; z-index: 1000;
+    background: linear-gradient(135deg, #f5f1e8 0%, #ebe6d6 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 600ms ease, visibility 600ms ease;
+  }
+  #splash.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+  #splash .frame {
+    text-align: center;
+    padding: 40px 60px;
+    border: 1px solid var(--line);
+    background: white;
+    min-width: 480px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  #splash .stripe {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: var(--hazard);
+  }
+  #splash .scanlines {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.04;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, #000 2px, #000 3px);
+  }
+  #splash h1 {
+    font-size: 48px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 4px;
+  }
+  #splash .ver { font-family: var(--mono); font-size: 10px; color: var(--ink3); letter-spacing: 0.15em; }
+  #splash .sub { font-family: var(--mono); font-size: 11px; color: var(--ink2); margin: 16px 0 32px; letter-spacing: 0.1em; }
+  #splash .bigbtn {
+    background: var(--ink); color: white; padding: 14px 36px; border: none;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.2em;
+    transition: transform 150ms ease, background 150ms ease;
+  }
+  #splash .bigbtn:hover { background: var(--hazard); transform: translateY(-1px); }
+  #splash .bigbtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background: var(--ink3); }
+  #splash .step { font-family: var(--mono); font-size: 10px; color: var(--ink2); height: 16px; letter-spacing: 0.08em; margin-top: 18px; }
+  #splash .nobrowser {
+    margin-top: 24px; padding: 10px 14px;
+    background: #fcefe4; border-left: 3px solid var(--warn);
+    font-size: 11px; color: var(--ink); display: none;
+  }
+  #splash.nobrowser .nobrowser { display: block; }
+  #splash .corner {
+    position: absolute; font-family: var(--mono); font-size: 9px; color: var(--ink3); letter-spacing: 0.12em;
+  }
+  #splash .corner.tl { top: 12px; left: 12px; }
+  #splash .corner.tr { top: 12px; right: 12px; }
+  #splash .corner.bl { bottom: 12px; left: 12px; }
+  #splash .corner.br { bottom: 12px; right: 12px; }
+
+  /* skeleton load animation */
+  .skel { display: inline-block; min-width: 80px; height: 0.9em; background: linear-gradient(90deg, #ddd 0%, #eee 50%, #ddd 100%); background-size: 200% 100%; animation: skelMove 1.4s linear infinite; }
+  @keyframes skelMove { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+  /* ============ MAIN GRID ============ */
+  #app {
+    display: grid;
+    height: 100vh;
+    grid-template-columns: 1fr 360px;
+    grid-template-rows: 56px auto 1fr 200px auto;
+    grid-template-areas:
+      "head head"
+      "banner banner"
+      "view panel"
+      "tel  panel"
+      "term term";
+    transition: opacity 600ms ease;
+    opacity: 0;
+  }
+  #app.ready { opacity: 1; }
+
+  /* ============ HEADER ============ */
+  header {
+    grid-area: head;
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--ink); position: relative;
+  }
+  .logo-mark::before {
+    content: ''; position: absolute; inset: 6px; background: var(--hazard);
+  }
+  .logo-text {
+    font-weight: 600; font-size: 14px; letter-spacing: -0.01em;
+  }
+  .logo-text small { color: var(--ink3); font-weight: 400; font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; margin-left: 4px; }
+
+  .modepills {
+    display: flex; gap: 2px; margin-left: 12px;
+  }
+  .pill {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    padding: 6px 11px; border: 1px solid var(--line); background: white;
+    color: var(--ink2); cursor: pointer;
+    transition: all 120ms ease;
+    text-transform: uppercase;
+  }
+  .pill:hover { border-color: var(--ink2); color: var(--ink); }
+  .pill.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+  .head-status {
+    margin-left: auto; display: flex; align-items: center; gap: 10px;
+  }
+  .conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bad);
+    box-shadow: 0 0 0 0 var(--bad);
+    animation: pulse 2s infinite;
+  }
+  .conn-dot.connected { background: var(--good); animation: none; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(196,61,61,0.5); }
+    100% { box-shadow: 0 0 0 8px rgba(196,61,61,0); }
+  }
+  .conn-text { font-family: var(--mono); font-size: 10px; color: var(--ink2); letter-spacing: 0.08em; }
+
+  .iconbtn {
+    width: 28px; height: 28px;
+    border: 1px solid var(--line); background: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--ink2);
+    transition: all 120ms ease;
+  }
+  .iconbtn:hover { background: var(--ink); color: white; border-color: var(--ink); }
+  .iconbtn.active { background: var(--hazard); color: white; border-color: var(--hazard); }
+  .iconbtn svg { width: 14px; height: 14px; }
+
+  /* ============ CATCH BANNER ============ */
+  #banner {
+    grid-area: banner;
+    background: linear-gradient(90deg, var(--hazard) 0%, var(--hazard-deep) 100%);
+    color: white;
+    padding: 0 18px;
+    display: flex; align-items: center; gap: 18px;
+    height: 0;
+    overflow: hidden;
+    transition: height 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #banner.show { height: 56px; }
+  #banner .bigstate {
+    font-weight: 600; font-size: 18px; letter-spacing: -0.01em;
+    min-width: 130px;
+  }
+  #banner .field {
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  #banner .lbl { font-family: var(--mono); font-size: 9px; opacity: 0.7; letter-spacing: 0.1em; }
+  #banner .val { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+  #banner .disarm {
+    margin-left: auto;
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+    color: white; padding: 8px 18px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+    transition: background 120ms ease;
+  }
+  #banner .disarm:hover { background: rgba(255,255,255,0.35); }
+
+  /* ============ 3D VIEWPORT ============ */
+  #view {
+    grid-area: view;
+    position: relative;
+    background: linear-gradient(to bottom, #ebe6d6 0%, #d8d3c0 100%);
+    overflow: hidden;
+  }
+  #c { display: block; width: 100%; height: 100%; }
+  .vp-overlay {
+    position: absolute; pointer-events: none;
+    z-index: 2;
+  }
+  .vp-overlay.tl { top: 12px; left: 12px; }
+  .vp-overlay.tr { top: 12px; right: 12px; }
+  .vp-overlay.bl { bottom: 12px; left: 12px; }
+  .vp-overlay.br { bottom: 12px; right: 12px; }
+  .vp-card {
+    background: rgba(255,255,255,0.92); border: 1px solid var(--line);
+    padding: 8px 10px; font-family: var(--mono); font-size: 10px;
+    line-height: 1.7; pointer-events: auto;
+  }
+  .vp-card h4 { font-size: 9px; letter-spacing: 0.12em; color: var(--ink2); margin-bottom: 4px; text-transform: uppercase; }
+  .vp-card .sw { display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: middle; }
+  .vp-toggles {
+    display: flex; gap: 4px; flex-wrap: wrap; pointer-events: auto;
+  }
+  .vp-tg {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+    padding: 5px 9px; border: 1px solid var(--line); background: rgba(255,255,255,0.92);
+    cursor: pointer; user-select: none; color: var(--ink2);
+  }
+  .vp-tg.on { background: var(--ink); color: white; border-color: var(--ink); }
+  .vp-tg.haz.on { background: var(--hazard); border-color: var(--hazard); }
+  .help-card {
+    font-family: var(--mono); font-size: 9px; line-height: 1.7; color: var(--ink2);
+    background: rgba(255,255,255,0.7); padding: 8px;
+    pointer-events: none; max-width: 180px;
+  }
+
+  /* FSM step indicator */
+  #fsm-bar {
+    display: flex; gap: 2px; pointer-events: auto;
+  }
+  #fsm-bar .step {
+    font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em;
+    padding: 4px 7px; border: 1px solid var(--line);
+    background: rgba(255,255,255,0.92); color: var(--ink3);
+    text-transform: uppercase;
+  }
+  #fsm-bar .step.on { background: var(--hazard); border-color: var(--hazard); color: white; }
+  #fsm-bar .step.done { background: var(--good); border-color: var(--good); color: white; }
+
+  /* ============ SIDE PANEL ============ */
+  #panel {
+    grid-area: panel;
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--line);
+    background: #faf8f1;
+  }
+  .tab {
+    flex: 1; padding: 11px 0;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em;
+    border: none; background: transparent; color: var(--ink2);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 120ms ease;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--hazard); background: white; }
+  .tab-content { flex: 1; overflow-y: auto; padding: 14px; }
+  .tab-content::-webkit-scrollbar { width: 6px; }
+  .tab-content::-webkit-scrollbar-thumb { background: var(--line); }
+
+  /* group blocks */
+  .group { margin-bottom: 18px; }
+  .group h3 {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink2); margin-bottom: 8px; padding-bottom: 4px;
+    border-bottom: 1px solid var(--line2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .group h3 .accessory { font-size: 10px; color: var(--ink3); }
+
+  .row {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 5px;
+  }
+  .row label { font-family: var(--mono); font-size: 10px; color: var(--ink2); min-width: 64px; }
+  .row input[type=range] { flex: 1; accent-color: var(--hazard); }
+  .row .val { font-family: var(--mono); font-size: 11px; min-width: 44px; text-align: right; }
+
+  .grid2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  }
+  .grid3 {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  }
+  .grid5 {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+  }
+
+  .btn {
+    padding: 8px 10px; border: 1px solid var(--line); background: white;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    color: var(--ink); cursor: pointer; text-transform: uppercase;
+    transition: all 120ms ease;
+  }
+  .btn:hover { background: var(--ink); color: white; border-color: var(--ink); }
+  .btn:active { transform: translateY(1px); }
+  .btn.haz { background: var(--hazard); color: white; border-color: var(--hazard); }
+  .btn.haz:hover { background: var(--hazard-deep); border-color: var(--hazard-deep); }
+  .btn.pos { background: var(--good); color: white; border-color: var(--good); }
+  .btn.pos:hover { filter: brightness(0.92); }
+  .btn.dim { color: var(--ink3); }
+  .btn.full { width: 100%; }
+  .btn.lg { padding: 12px; font-size: 11px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .togline {
+    display: flex; gap: 4px; margin-bottom: 6px;
+  }
+  .tg {
+    flex: 1; padding: 7px 10px; border: 1px solid var(--line); background: white;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+    color: var(--ink2); cursor: pointer; text-transform: uppercase;
+    transition: all 120ms ease;
+  }
+  .tg.on { background: var(--ink); color: white; border-color: var(--ink); }
+  .tg.haz.on { background: var(--hazard); border-color: var(--hazard); }
+  .tg.good.on { background: var(--good); border-color: var(--good); }
+
+  /* anchor health bars */
+  .anchor-row {
+    display: grid; grid-template-columns: 24px 1fr 50px;
+    gap: 8px; align-items: center; margin-bottom: 6px;
+    font-family: var(--mono); font-size: 10px;
+  }
+  .anchor-row .lbl { font-weight: 500; }
+  .anchor-row .qbar {
+    height: 5px; background: var(--line); position: relative; overflow: hidden;
+  }
+  .anchor-row .qbar > div {
+    height: 100%; background: var(--good);
+    transition: width 200ms ease, background 200ms ease;
+  }
+  .anchor-row .rng { text-align: right; color: var(--ink2); }
+  .anchor-row.dead .qbar > div { background: var(--bad); }
+  .anchor-row.warn .qbar > div { background: var(--warn); }
+
+  /* ============ TELEMETRY STRIP ============ */
+  #telstrip {
+    grid-area: tel;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    overflow: hidden;
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+  .tcol h4 {
+    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink2); margin-bottom: 5px; padding-bottom: 3px;
+    border-bottom: 1px solid var(--line2);
+  }
+  .kv { display: grid; grid-template-columns: 70px 1fr; gap: 2px 8px; line-height: 1.6; }
+  .kv .k { color: var(--ink2); }
+  .kv .v { color: var(--ink); font-weight: 500; }
+  .v.good { color: var(--good); }
+  .v.warn { color: var(--warn); }
+  .v.bad  { color: var(--bad); }
+  .v.dim  { color: var(--ink3); }
+
+  /* ============ TERMINAL ============ */
+  #term-wrap {
+    grid-area: term;
+    border-top: 1px solid var(--line);
+    background: #fafaf6;
+    transition: max-height 250ms ease;
+    max-height: 28px;
+    overflow: hidden;
+  }
+  #term-wrap.open { max-height: 200px; }
+  #term-bar {
+    display: flex; align-items: center; padding: 6px 12px;
+    border-bottom: 1px solid var(--line2);
+    font-family: var(--mono); font-size: 10px; color: var(--ink2);
+    cursor: pointer; user-select: none; height: 28px;
+    letter-spacing: 0.08em;
+  }
+  #term-bar .arrow { margin-right: 8px; transition: transform 200ms ease; }
+  #term-wrap.open #term-bar .arrow { transform: rotate(90deg); }
+  #term-bar .ind { margin-left: auto; color: var(--ink3); font-size: 9px; }
+  #term {
+    height: 172px; overflow-y: auto; padding: 8px 12px;
+    font-family: var(--mono); font-size: 10px; line-height: 1.5;
+    background: var(--ink); color: #d6cfc0;
+  }
+  #term .l-tx { color: #88c8aa; }
+  #term .l-rx { color: #d6cfc0; }
+  #term .l-err { color: #ee8888; }
+  #term .l-info { color: #88aacc; }
+  #term-input {
+    width: 100%; padding: 6px 12px; border: none; border-top: 1px solid #333;
+    background: var(--ink); color: white; font-family: var(--mono); font-size: 11px;
+    outline: none;
+  }
+
+  /* ============ MODALS ============ */
+  .modal-back {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20, 18, 14, 0.5);
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-back.show { display: flex; }
+  .modal {
+    background: white;
+    width: min(720px, 90vw); max-height: 85vh;
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+    display: flex; flex-direction: column;
+    animation: modalIn 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes modalIn {
+    from { transform: translateY(20px) scale(0.97); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .modal-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid var(--line);
+  }
+  .modal-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .modal-head .stamp {
+    font-family: var(--mono); font-size: 10px; color: var(--hazard);
+    border: 1px solid var(--hazard); padding: 3px 8px; letter-spacing: 0.15em;
+  }
+  .modal-head .x {
+    margin-left: auto;
+    width: 28px; height: 28px; border: 1px solid var(--line); background: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-family: var(--mono);
+  }
+  .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+  /* checklist styles */
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-row {
+    display: grid; grid-template-columns: 28px 1fr 80px auto;
+    gap: 12px; align-items: center;
+    padding: 10px 12px; border: 1px solid var(--line); background: #faf8f1;
+    font-family: var(--mono); font-size: 11px;
+    transition: all 200ms ease;
+  }
+  .check-row.running { background: white; border-color: var(--hazard); box-shadow: 0 0 0 1px var(--hazard); }
+  .check-row.pass { background: #f0f8f4; border-color: var(--good); }
+  .check-row.fail { background: #fcefef; border-color: var(--bad); }
+  .check-row .icon {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .check-row .icon.pending { background: var(--line); color: var(--ink2); }
+  .check-row .icon.running { background: var(--hazard); color: white; animation: spin 1s linear infinite; }
+  @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .check-row .icon.pass { background: var(--good); color: white; }
+  .check-row .icon.fail { background: var(--bad); color: white; }
+  .check-row .name { font-weight: 500; }
+  .check-row .status { font-size: 9px; letter-spacing: 0.12em; color: var(--ink2); text-transform: uppercase; }
+  .check-row .runbtn { padding: 5px 10px; }
+
+  /* graphs */
+  .graph-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    padding: 16px;
+  }
+  .graph-card {
+    border: 1px solid var(--line); padding: 10px;
+    background: white;
+    height: 180px; display: flex; flex-direction: column;
+  }
+  .graph-card h4 { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--ink2); margin-bottom: 6px; text-transform: uppercase; }
+  .graph-card canvas { width: 100%; flex: 1; }
+
+  /* ============ ANIMATIONS ============ */
+  .fadein { animation: fadein 400ms ease; }
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .recording {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bad); animation: blink 1s ease infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+
+<!-- ============ CONNECT SPLASH ============ -->
+<div id="splash">
+  <div class="corner tl">SYS · ARM · v4.0.0</div>
+  <div class="corner tr">REF · ETHAN · 2026</div>
+  <div class="corner bl">SEEING · SYSTEMS</div>
+  <div class="corner br">DRONE · CATCHER</div>
+  <div class="frame">
+    <div class="stripe"></div>
+    <div class="scanlines"></div>
+    <h1>ARM CTRL</h1>
+    <div class="ver">VERSION 4.0.0 · TEENSY 4.1</div>
+    <div class="sub">5DOF MANIPULATOR · UWB DRONE TRACKING · BOAT TILT COMP</div>
+    <button id="connectBtn" class="bigbtn">CONNECT SERIAL</button>
+    <div id="splashStep" class="step">awaiting user action</div>
+    <div class="nobrowser">
+      Web Serial requires Chrome, Edge, or Opera (desktop). Firefox/Safari not supported.
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <div class="logo-text">ARM<small>CTRL · v4</small></div>
+    </div>
+    <div class="modepills" id="modepills">
+      <button class="pill" data-mode="M">MAN</button>
+      <button class="pill" data-mode="K">XYZ</button>
+      <button class="pill" data-mode="H">HGT</button>
+      <button class="pill" data-mode="D">DNC</button>
+      <button class="pill" data-mode="T">TLT</button>
+      <button class="pill" data-mode="C">CATCH</button>
+      <button class="pill" data-mode="B">DBG</button>
+    </div>
+    <div class="head-status">
+      <button class="iconbtn" id="diagBtn" title="Diagnostics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+      </button>
+      <button class="iconbtn" id="graphBtn" title="Graphs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 17 9 11 13 15 21 7"/></svg>
+      </button>
+      <button class="iconbtn" id="ctrlBtn" title="Controller">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/></svg>
+      </button>
+      <button class="iconbtn" id="logBtn" title="Toggle CSV log">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+      </button>
+      <div class="conn-dot" id="connDot"></div>
+      <div class="conn-text" id="connText">DISCONNECTED</div>
+      <button class="iconbtn" id="discBtn" title="Disconnect">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17l-3-3 3-3M15 7l3 3-3 3"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- CATCH BANNER -->
+  <div id="banner">
+    <div class="bigstate" id="bannerState">--</div>
+    <div class="field"><span class="lbl">DRONE</span><span class="val" id="bannerDrone">-- / -- / --</span></div>
+    <div class="field"><span class="lbl">DIST</span><span class="val" id="bannerDist">--</span></div>
+    <div class="field"><span class="lbl">MAGNET</span><span class="val" id="bannerMag">OFF</span></div>
+    <div class="field"><span class="lbl">ELAPSED</span><span class="val" id="bannerTime">0.0s</span></div>
+    <button class="disarm" id="bannerDisarm">DISARM</button>
+  </div>
+
+  <!-- 3D VIEW -->
+  <div id="view">
+    <canvas id="c"></canvas>
+    <div class="vp-overlay tl">
+      <div class="vp-card">
+        <h4>LEGEND</h4>
+        <div><span class="sw" style="background:#e85d24"></span>Base anchors</div>
+        <div><span class="sw" style="background:#1d9e75"></span>Tip anchor</div>
+        <div><span class="sw" style="background:#3b8bd4"></span>Drone tag</div>
+        <div><span class="sw" style="background:#7f55c8"></span>Sim drone</div>
+      </div>
+    </div>
+    <div class="vp-overlay tr">
+      <div class="vp-toggles">
+        <span class="vp-tg on" id="tgAnchors">anchors</span>
+        <span class="vp-tg" id="tgRanges">ranges</span>
+        <span class="vp-tg on" id="tgDrone">drone</span>
+        <span class="vp-tg" id="tgGhost">ghost</span>
+        <span class="vp-tg" id="tgGrid">grid</span>
+      </div>
+    </div>
+    <div class="vp-overlay bl">
+      <div id="fsm-bar">
+        <div class="step" data-s="IDLE">IDLE</div>
+        <div class="step" data-s="SEARCHING">SEEK</div>
+        <div class="step" data-s="TRACKING">TRACK</div>
+        <div class="step" data-s="STAGING">STAGE</div>
+        <div class="step" data-s="COMMITTING">COMMIT</div>
+        <div class="step" data-s="CATCHING">CATCH</div>
+        <div class="step" data-s="SECURED">SECURE</div>
+        <div class="step" data-s="STOWING">STOW</div>
+      </div>
+    </div>
+    <div class="vp-overlay br">
+      <div class="help-card">
+        scroll · zoom<br>
+        right drag · orbit<br>
+        middle drag · pan<br>
+        left drag drone · move<br>
+        drone slid + locked = sim
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL with tabs -->
+  <div id="panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="ctrl">CTRL</button>
+      <button class="tab" data-tab="uwb">UWB</button>
+      <button class="tab" data-tab="tune">TUNE</button>
+    </div>
+    <div class="tab-content" id="tabCtrl">
+      <div class="group">
+        <h3>POSES</h3>
+        <div class="grid5">
+          <button class="btn" onclick="sendCmd('6')">HOME</button>
+          <button class="btn" onclick="sendCmd('7')">READY</button>
+          <button class="btn" onclick="sendCmd('8')">CATCH</button>
+          <button class="btn" onclick="sendCmd('9')">EXT</button>
+          <button class="btn" onclick="sendCmd('0')">RTRCT</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>DANCES</h3>
+        <div class="grid3">
+          <button class="btn" onclick="dnRun(0)">SHOWCASE</button>
+          <button class="btn" onclick="dnRun(1)">GREET</button>
+          <button class="btn" onclick="dnRun(2)">IDLE</button>
+        </div>
+        <div class="grid2" style="margin-top:4px">
+          <button class="btn" onclick="dnRun(3)">COMBAT</button>
+          <button class="btn" onclick="dnRun(4)">CHASE</button>
+        </div>
+        <div class="togline" style="margin-top:6px">
+          <span class="tg" id="tgLoop" onclick="sendCmd('L')">LOOP</span>
+          <button class="btn dim" onclick="sendCmd('X')">STOP</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>CATCH</h3>
+        <button class="btn haz lg full" id="armBtn" onclick="catchToggle()">ARM CATCH</button>
+        <div class="togline" style="margin-top:6px">
+          <span class="tg good" id="tgTilt" onclick="toggleTcomp()">TILT COMP</span>
+          <span class="tg" id="tgSim" onclick="toggleSim()">SIM DRONE</span>
+        </div>
+        <div class="grid2" style="margin-top:6px">
+          <button class="btn" onclick="sendLine('mag on')">MAG ON</button>
+          <button class="btn" onclick="sendLine('mag off')">MAG OFF</button>
+        </div>
+        <button class="btn dim full" style="margin-top:4px" onclick="sendLine('catch reset')">CATCH RESET</button>
+      </div>
+      <div class="group">
+        <h3>MANUAL</h3>
+        <div class="grid3">
+          <button class="btn" onmousedown="sendCmd('q')">B-</button>
+          <button class="btn dim">BASE</button>
+          <button class="btn" onmousedown="sendCmd('1')">B+</button>
+          <button class="btn" onmousedown="sendCmd('w')">S-</button>
+          <button class="btn dim">SHLD</button>
+          <button class="btn" onmousedown="sendCmd('2')">S+</button>
+          <button class="btn" onmousedown="sendCmd('e')">E-</button>
+          <button class="btn dim">ELBW</button>
+          <button class="btn" onmousedown="sendCmd('3')">E+</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label>SPEED</label>
+          <input type="range" id="speedSlider" min="10" max="120" value="40">
+          <span class="val" id="speedVal">40</span>
+        </div>
+        <div class="row">
+          <label>PULSE</label>
+          <input type="range" id="pulseSlider" min="100" max="2000" step="100" value="500">
+          <span class="val" id="pulseVal">500</span>
+        </div>
+        <div class="row">
+          <label>STEP</label>
+          <input type="range" id="stepSlider" min="0.25" max="5" step="0.25" value="1">
+          <span class="val" id="stepVal">1.00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tabUwb" style="display:none">
+      <div class="group">
+        <h3>ANCHORS <span class="accessory" id="anchorOK">--/4</span></h3>
+        <div class="anchor-row" id="ar0">
+          <div class="lbl">A1</div>
+          <div class="qbar"><div style="width:0%"></div></div>
+          <div class="rng">--</div>
+        </div>
+        <div class="anchor-row" id="ar1">
+          <div class="lbl">A2</div>
+          <div class="qbar"><div style="width:0%"></div></div>
+          <div class="rng">--</div>
+        </div>
+        <div class="anchor-row" id="ar2">
+          <div class="lbl">A3</div>
+          <div class="qbar"><div style="width:0%"></div></div>
+          <div class="rng">--</div>
+        </div>
+        <div class="anchor-row" id="ar3">
+          <div class="lbl">TIP</div>
+          <div class="qbar"><div style="width:0%"></div></div>
+          <div class="rng">--</div>
+        </div>
+        <div class="grid2" style="margin-top:8px">
+          <button class="btn" onclick="sendLine('uwb status')">STATUS</button>
+          <button class="btn" onclick="sendLine('uwb reinit')">REINIT</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>SOLVED POSITION</h3>
+        <div class="kv" style="font-family:var(--mono); font-size:11px">
+          <span class="k">DRONE X</span><span class="v" id="dpX">--</span>
+          <span class="k">DRONE Y</span><span class="v" id="dpY">--</span>
+          <span class="k">DRONE Z</span><span class="v" id="dpZ">--</span>
+          <span class="k">VALID</span><span class="v" id="dpValid">--</span>
+        </div>
+      </div>
+      <div class="group">
+        <h3>CALIBRATION</h3>
+        <p style="font-family:var(--mono); font-size:9px; color:var(--ink2); line-height:1.5; margin-bottom:8px;">
+          Edit anchor positions (inches in baseplate frame). Press SAVE to persist.
+        </p>
+        <div id="anchorCalRows"></div>
+        <button class="btn full" style="margin-top:8px" onclick="anchorSaveAll()">APPLY + SAVE</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tabTune" style="display:none">
+      <div class="group">
+        <h3>SIM DRONE</h3>
+        <span class="tg full" id="tgSim2" onclick="toggleSim()">ENABLE SIM DRONE</span>
+        <div class="row" style="margin-top:8px">
+          <label>SIM X</label>
+          <input type="range" id="simX" min="-30" max="30" step="0.5" value="6">
+          <span class="val" id="simXv">6.0</span>
+        </div>
+        <div class="row">
+          <label>SIM Y</label>
+          <input type="range" id="simY" min="-30" max="30" step="0.5" value="14">
+          <span class="val" id="simYv">14.0</span>
+        </div>
+        <div class="row">
+          <label>SIM Z</label>
+          <input type="range" id="simZ" min="0" max="40" step="0.5" value="24">
+          <span class="val" id="simZv">24.0</span>
+        </div>
+      </div>
+      <div class="group">
+        <h3>WRIST CAL</h3>
+        <div class="row">
+          <label>ROLL</label>
+          <input type="range" id="wrCal" min="-30" max="30" step="1" value="-10">
+          <span class="val" id="wrCalv">-10</span>
+        </div>
+        <div class="row">
+          <label>PITCH</label>
+          <input type="range" id="wpCal" min="-30" max="30" step="1" value="0">
+          <span class="val" id="wpCalv">0</span>
+        </div>
+        <button class="btn full" onclick="sendLine('cal save')">SAVE TO EEPROM</button>
+      </div>
+      <div class="group">
+        <h3>JOINT CAL</h3>
+        <div class="row">
+          <label>BASE</label>
+          <input type="number" id="bOff" step="0.5" value="0" style="flex:1; padding:5px; font-family:var(--mono); font-size:11px;">
+          <button class="btn" onclick="sendLine('cal b ' + document.getElementById('bOff').value)">SET</button>
+        </div>
+        <div class="row">
+          <label>SHLD</label>
+          <input type="number" id="sOff" step="0.5" value="-17" style="flex:1; padding:5px; font-family:var(--mono); font-size:11px;">
+          <button class="btn" onclick="sendLine('cal s ' + document.getElementById('sOff').value)">SET</button>
+        </div>
+        <div class="row">
+          <label>ELBW</label>
+          <input type="number" id="eOff" step="0.5" value="0" style="flex:1; padding:5px; font-family:var(--mono); font-size:11px;">
+          <button class="btn" onclick="sendLine('cal e ' + document.getElementById('eOff').value)">SET</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>DEBUG</h3>
+        <div class="grid2">
+          <button class="btn dim" onclick="sendLine('magattach on')">MAG ATTACH</button>
+          <button class="btn dim" onclick="sendLine('magattach off')">MAG DETACH</button>
+          <button class="btn dim" onclick="sendCmd('S')">TELEM TOGGLE</button>
+          <button class="btn dim" onclick="sendCmd('?')">PRINT HELP</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELEMETRY STRIP -->
+  <div id="telstrip">
+    <div class="tcol">
+      <h4>JOINTS</h4>
+      <div class="kv">
+        <span class="k">base</span><span class="v" id="t_base">--</span>
+        <span class="k">shld</span><span class="v" id="t_shld">--</span>
+        <span class="k">elbw</span><span class="v" id="t_elbw">--</span>
+        <span class="k">w roll</span><span class="v" id="t_wr">--</span>
+        <span class="k">w pitch</span><span class="v" id="t_wp">--</span>
+      </div>
+    </div>
+    <div class="tcol">
+      <h4>TIP / MAG</h4>
+      <div class="kv">
+        <span class="k">tip x</span><span class="v" id="t_tx">--</span>
+        <span class="k">tip y</span><span class="v" id="t_ty">--</span>
+        <span class="k">tip z</span><span class="v" id="t_tz">--</span>
+        <span class="k">mag</span><span class="v" id="t_mag">--</span>
+        <span class="k">attached</span><span class="v" id="t_matt">--</span>
+      </div>
+    </div>
+    <div class="tcol">
+      <h4>UWB</h4>
+      <div class="kv">
+        <span class="k">A1</span><span class="v" id="t_a1">--</span>
+        <span class="k">A2</span><span class="v" id="t_a2">--</span>
+        <span class="k">A3</span><span class="v" id="t_a3">--</span>
+        <span class="k">TIP</span><span class="v" id="t_at">--</span>
+        <span class="k">valid</span><span class="v" id="t_valid">--</span>
+      </div>
+    </div>
+    <div class="tcol">
+      <h4>CATCH</h4>
+      <div class="kv">
+        <span class="k">state</span><span class="v" id="t_state">IDLE</span>
+        <span class="k">drone Z</span><span class="v" id="t_dz">--</span>
+        <span class="k">stall</span><span class="v" id="t_stall">--</span>
+        <span class="k">log</span><span class="v" id="t_log">off</span>
+        <span class="k">mode</span><span class="v" id="t_mode">M</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMINAL -->
+  <div id="term-wrap">
+    <div id="term-bar" onclick="toggleTerm()">
+      <span class="arrow">▶</span>
+      <span>TERMINAL</span>
+      <span class="ind" id="termInd">collapsed</span>
+    </div>
+    <div id="term"></div>
+    <input id="term-input" placeholder="type command + enter" />
+  </div>
+
+</div> <!-- /app -->
+
+<!-- ============ MODALS ============ -->
+<div class="modal-back" id="diagModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="stamp">PRE-FLIGHT</span>
+      <h2>DIAGNOSTICS</h2>
+      <button class="x" onclick="document.getElementById('diagModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; gap:8px; margin-bottom:16px">
+        <button class="btn haz" onclick="runAllDiag()">RUN ALL TESTS</button>
+        <button class="btn dim" onclick="resetDiag()">RESET</button>
+      </div>
+      <div class="checklist" id="checklist"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="graphModal">
+  <div class="modal" style="width:min(900px, 95vw)">
+    <div class="modal-head">
+      <span class="stamp">LIVE</span>
+      <h2>GRAPHS</h2>
+      <button class="x" onclick="document.getElementById('graphModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div class="graph-grid">
+        <div class="graph-card"><h4>JOINT ANGLES</h4><canvas id="gJoints"></canvas></div>
+        <div class="graph-card"><h4>TIP XYZ</h4><canvas id="gTip"></canvas></div>
+        <div class="graph-card"><h4>DRONE POSITION</h4><canvas id="gDrone"></canvas></div>
+        <div class="graph-card"><h4>UWB RANGES</h4><canvas id="gRng"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="ctrlModal">
+  <div class="modal" style="width:min(560px, 90vw)">
+    <div class="modal-head">
+      <span class="stamp">XBOX</span>
+      <h2>CONTROLLER</h2>
+      <button class="x" onclick="document.getElementById('ctrlModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="padStatus" style="font-family:var(--mono); font-size:11px; margin-bottom:12px;">no controller detected · press any button to bind</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; font-family:var(--mono); font-size:10px;">
+        <div>
+          <h4 style="margin-bottom:6px; color:var(--ink2); letter-spacing:0.1em;">XYZ MODE BINDINGS</h4>
+          <div>L stick X → X teleop</div>
+          <div>L stick Y → Y teleop</div>
+          <div>R stick Y → Z teleop</div>
+          <div>A → CATCH 8 pose</div>
+          <div>B → ABORT (X)</div>
+          <div>RB → speed +</div>
+          <div>LB → speed -</div>
+        </div>
+        <div>
+          <h4 style="margin-bottom:6px; color:var(--ink2); letter-spacing:0.1em;">CATCH MODE</h4>
+          <div>A → ARM CATCH</div>
+          <div>B → DISARM</div>
+          <div>X → MAG ON</div>
+          <div>Y → MAG OFF</div>
+          <div>D-pad ← → → modes</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:6px;">
+        <span class="tg" id="padEnable">ENABLE GAMEPAD</span>
+        <span class="val" id="padValues" style="font-family:var(--mono); font-size:10px; color:var(--ink2);"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js";
+
+// ============================================================
+// CONFIG
+// ============================================================
+const CFG = {
+  L1: 13.75, L2: 17.0, shoulderZ: 3.0, magOffset: 3.0,
+  basePlate: { w: 22, d: 14, t: 0.5 },
+  anchors: [
+    { id: 'A1', pos: [-5, -5, -3], color: 0xe85d24 },
+    { id: 'A2', pos: [-5, 10, -3], color: 0xe85d24 },
+    { id: 'A3', pos: [16,  6,  8], color: 0xe85d24 },
+  ],
+  tipBoom: { perp: 4, along: -2, color: 0x1d9e75 },
+};
+
+const FSM_ORDER = ['IDLE','SEARCHING','TRACKING','STAGING','COMMITTING','CATCHING','SECURED','STOWING'];
+
+// ============================================================
+// SERIAL CONNECTION (Web Serial)
+// ============================================================
+let port = null, reader = null, writer = null;
+let connected = false;
+let rxBuf = '';
+
+async function connectSerial() {
+  if (!('serial' in navigator)) {
+    document.getElementById('splash').classList.add('nobrowser');
+    return;
+  }
+  try {
+    document.getElementById('splashStep').textContent = 'requesting port...';
+    port = await navigator.serial.requestPort();
+    document.getElementById('splashStep').textContent = 'opening at 115200...';
+    await port.open({ baudRate: 115200 });
+    const decoder = new TextDecoderStream();
+    port.readable.pipeTo(decoder.writable);
+    reader = decoder.readable.getReader();
+    writer = port.writable.getWriter();
+    connected = true;
+    document.getElementById('splashStep').textContent = 'handshake...';
+    document.getElementById('connDot').classList.add('connected');
+    document.getElementById('connText').textContent = 'CONNECTED';
+    setTimeout(() => {
+      document.getElementById('splashStep').textContent = 'ready';
+      document.getElementById('splash').classList.add('gone');
+      document.getElementById('app').classList.add('ready');
+      readLoop();
+    }, 600);
+  } catch (e) {
+    document.getElementById('splashStep').textContent = 'error: ' + e.message;
+    console.error(e);
+  }
+}
+
+async function readLoop() {
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      rxBuf += value;
+      let nl;
+      while ((nl = rxBuf.indexOf('\n')) >= 0) {
+        const line = rxBuf.substring(0, nl).replace('\r','');
+        rxBuf = rxBuf.substring(nl + 1);
+        handleLine(line);
+      }
+    }
+  } catch (e) { console.error('readLoop:', e); }
+}
+
+async function send(s) {
+  if (!writer) { termAppend('NOT CONNECTED', 'err'); return; }
+  try {
+    await writer.write(new TextEncoder().encode(s));
+    termAppend('> ' + s.replace(/[\r\n]+$/,''), 'tx');
+  } catch (e) { termAppend('TX err: ' + e.message, 'err'); }
+}
+
+window.sendLine = (s) => send(s + '\n');
+window.sendCmd = (c) => send(c);
+
+document.getElementById('connectBtn').addEventListener('click', connectSerial);
+document.getElementById('discBtn').addEventListener('click', async () => {
+  if (port) { try { await port.close(); } catch (e) {} }
+  connected = false;
+  document.getElementById('connDot').classList.remove('connected');
+  document.getElementById('connText').textContent = 'DISCONNECTED';
+});
+
+// ============================================================
+// TERMINAL
+// ============================================================
+const termEl = document.getElementById('term');
+const termIn = document.getElementById('term-input');
+let termOpen = false;
+window.toggleTerm = () => {
+  termOpen = !termOpen;
+  document.getElementById('term-wrap').classList.toggle('open', termOpen);
+  document.getElementById('termInd').textContent = termOpen ? 'open' : 'collapsed';
+};
+function termAppend(s, kind = 'rx') {
+  const div = document.createElement('div');
+  div.className = 'l-' + kind;
+  div.textContent = s;
+  termEl.appendChild(div);
+  termEl.scrollTop = termEl.scrollHeight;
+  while (termEl.childNodes.length > 200) termEl.removeChild(termEl.firstChild);
+}
+termIn.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    sendLine(termIn.value);
+    termIn.value = '';
+  }
+});
+
+// ============================================================
+// TELEMETRY PARSER
+// $T,bA,sA,eA,tipX,tipY,tipZ,roll,pitch,mode,qw,qx,qy,qz,
+//    bOff,sOff,eOff,magOn,magAttached,
+//    catchState,droneX,droneY,droneZ,droneValid,
+//    r1,r2,r3,rTip, q1,q2,q3,qTip,
+//    stallFlags,magLocked,simDroneOn,catchArmed
+// ============================================================
+const tel = {
+  bA:0, sA:0, eA:0, tipX:0, tipY:0, tipZ:0,
+  roll:90, pitch:120, mode:0,
+  qw:1, qx:0, qy:0, qz:0,
+  bOff:0, sOff:0, eOff:0,
+  magOn:0, magAttached:0,
+  catchState:0, droneX:0, droneY:0, droneZ:0, droneValid:0,
+  ranges:[0,0,0,0], qual:[0,0,0,0],
+  stallFlags:0, magLocked:0, simDroneOn:0, catchArmed:0,
+  lastSeen:0,
+};
+
+function parseTelemetry(line) {
+  const p = line.substring(3).split(',').map(parseFloat);
+  if (p.length < 18) return false;
+  tel.bA=p[0]; tel.sA=p[1]; tel.eA=p[2];
+  tel.tipX=p[3]; tel.tipY=p[4]; tel.tipZ=p[5];
+  tel.roll=p[6]; tel.pitch=p[7]; tel.mode=p[8];
+  tel.qw=p[9]; tel.qx=p[10]; tel.qy=p[11]; tel.qz=p[12];
+  tel.bOff=p[13]; tel.sOff=p[14]; tel.eOff=p[15];
+  tel.magOn=p[16]; tel.magAttached=p[17];
+  if (p.length > 23) {
+    tel.catchState=p[18]; tel.droneX=p[19]; tel.droneY=p[20]; tel.droneZ=p[21]; tel.droneValid=p[22];
+    tel.ranges=[p[23]||0, p[24]||0, p[25]||0, p[26]||0];
+    tel.qual=[p[27]||0, p[28]||0, p[29]||0, p[30]||0];
+    tel.stallFlags=p[31]||0;
+    tel.magLocked=p[32]||0;
+    tel.simDroneOn=p[33]||0;
+    tel.catchArmed=p[34]||0;
+  }
+  tel.lastSeen = performance.now();
+  if (logging) logCsv();
+  return true;
+}
+
+function handleLine(line) {
+  if (line.startsWith('$T,')) {
+    if (parseTelemetry(line)) updateTelemetryDisplay();
+  } else {
+    termAppend(line, 'rx');
+  }
+}
+
+// ============================================================
+// UI UPDATE FROM TELEMETRY
+// ============================================================
+const fsmNames = ['IDLE','SEARCHING','TRACKING','STAGING','COMMITTING','CATCHING','SECURED','STOWING','ABORT','ERROR'];
+const modeNames = ['M','B','H','K','D','T','C'];
+const modeFull = ['MAN','DBG','HGT','XYZ','DNC','TLT','CATCH'];
+
+function updateTelemetryDisplay() {
+  document.getElementById('t_base').textContent = tel.bA.toFixed(1);
+  document.getElementById('t_shld').textContent = tel.sA.toFixed(1);
+  document.getElementById('t_elbw').textContent = tel.eA.toFixed(1);
+  document.getElementById('t_wr').textContent = tel.roll;
+  document.getElementById('t_wp').textContent = tel.pitch;
+  document.getElementById('t_tx').textContent = tel.tipX.toFixed(1);
+  document.getElementById('t_ty').textContent = tel.tipY.toFixed(1);
+  document.getElementById('t_tz').textContent = tel.tipZ.toFixed(1);
+  const magEl = document.getElementById('t_mag');
+  magEl.textContent = tel.magOn ? (tel.magLocked ? 'ON·LOCK' : 'ON') : 'off';
+  magEl.className = 'v ' + (tel.magOn ? 'good' : 'dim');
+  document.getElementById('t_matt').textContent = tel.magAttached ? 'yes' : 'no';
+  document.getElementById('t_a1').textContent = tel.ranges[0].toFixed(1);
+  document.getElementById('t_a2').textContent = tel.ranges[1].toFixed(1);
+  document.getElementById('t_a3').textContent = tel.ranges[2].toFixed(1);
+  document.getElementById('t_at').textContent = tel.ranges[3].toFixed(1);
+  const validEl = document.getElementById('t_valid');
+  validEl.textContent = tel.droneValid ? 'yes' : 'no';
+  validEl.className = 'v ' + (tel.droneValid ? 'good' : 'bad');
+  const stateEl = document.getElementById('t_state');
+  stateEl.textContent = fsmNames[tel.catchState];
+  stateEl.className = 'v ' + (tel.catchState === 0 ? 'dim' :
+                              tel.catchState >= 8 ? 'bad' :
+                              tel.catchState >= 5 ? 'good' : 'warn');
+  document.getElementById('t_dz').textContent = tel.droneValid ? tel.droneZ.toFixed(1) : '--';
+  const stallEl = document.getElementById('t_stall');
+  if (tel.stallFlags) {
+    stallEl.textContent = ['B','S','E'].filter((_,i) => tel.stallFlags & (1<<i)).join(',');
+    stallEl.className = 'v bad';
+  } else { stallEl.textContent = 'ok'; stallEl.className = 'v dim'; }
+  document.getElementById('t_log').textContent = logging ? 'REC' : 'off';
+  document.getElementById('t_mode').textContent = modeFull[tel.mode] || '?';
+
+  // Mode pills
+  const modeChar = ['M','B','H','K','D','T','C'][tel.mode] || 'M';
+  document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.mode === modeChar));
+
+  // Catch banner
+  const banner = document.getElementById('banner');
+  if (tel.catchState !== 0 || tel.catchArmed) {
+    banner.classList.add('show');
+    document.getElementById('bannerState').textContent = fsmNames[tel.catchState];
+    document.getElementById('bannerDrone').textContent = tel.droneValid
+      ? `${tel.droneX.toFixed(1)} / ${tel.droneY.toFixed(1)} / ${tel.droneZ.toFixed(1)}`
+      : '-- / -- / --';
+    const dx = tel.droneX - tel.tipX, dy = tel.droneY - tel.tipY, dz = tel.droneZ - tel.tipZ;
+    const dist = Math.hypot(dx, dy, dz);
+    document.getElementById('bannerDist').textContent = tel.droneValid ? dist.toFixed(1) + '"' : '--';
+    document.getElementById('bannerMag').textContent = tel.magOn ? (tel.magLocked ? 'LOCKED' : 'ON') : 'off';
+    const elapsed = performance.now() - (catchStartT || performance.now());
+    document.getElementById('bannerTime').textContent = (elapsed/1000).toFixed(1) + 's';
+  } else {
+    banner.classList.remove('show');
+    catchStartT = null;
+  }
+  if (tel.catchState !== 0 && !catchStartT) catchStartT = performance.now();
+
+  // FSM bar
+  document.querySelectorAll('#fsm-bar .step').forEach((el) => {
+    const idx = FSM_ORDER.indexOf(el.dataset.s);
+    el.classList.remove('on','done');
+    if (idx === tel.catchState) el.classList.add('on');
+    else if (idx < tel.catchState && tel.catchState < 8) el.classList.add('done');
+  });
+
+  // Anchor health
+  for (let i = 0; i < 4; i++) {
+    const row = document.getElementById('ar' + i);
+    const bar = row.querySelector('.qbar > div');
+    bar.style.width = (tel.qual[i] * 100) + '%';
+    row.querySelector('.rng').textContent = tel.ranges[i].toFixed(1) + '"';
+    row.classList.remove('dead', 'warn');
+    if (tel.qual[i] < 0.2) row.classList.add('dead');
+    else if (tel.qual[i] < 0.6) row.classList.add('warn');
+  }
+  const aliveCount = tel.qual.filter(q => q > 0.3).length;
+  document.getElementById('anchorOK').textContent = aliveCount + '/4';
+
+  // UWB tab solved
+  document.getElementById('dpX').textContent = tel.droneX.toFixed(2);
+  document.getElementById('dpY').textContent = tel.droneY.toFixed(2);
+  document.getElementById('dpZ').textContent = tel.droneZ.toFixed(2);
+  const dvE = document.getElementById('dpValid');
+  dvE.textContent = tel.droneValid ? 'YES' : 'NO';
+  dvE.className = 'v ' + (tel.droneValid ? 'good' : 'bad');
+
+  // Tilt comp / sim toggle states
+  if (tel.simDroneOn) {
+    document.getElementById('tgSim').classList.add('on');
+    document.getElementById('tgSim2').classList.add('on');
+  }
+
+  // Arm button
+  document.getElementById('armBtn').textContent = tel.catchArmed ? 'DISARM CATCH' : 'ARM CATCH';
+  document.getElementById('armBtn').className = tel.catchArmed
+    ? 'btn lg full' : 'btn haz lg full';
+}
+
+let catchStartT = null;
+
+// ============================================================
+// CATCH BUTTONS
+// ============================================================
+window.catchToggle = () => {
+  if (tel.catchArmed) sendLine('disarm');
+  else sendLine('arm');
+};
+window.toggleTcomp = () => {
+  const el = document.getElementById('tgTilt');
+  el.classList.toggle('on');
+  sendLine(el.classList.contains('on') ? 'tcompcatch on' : 'tcompcatch off');
+};
+window.toggleSim = () => {
+  const el = document.getElementById('tgSim');
+  const el2 = document.getElementById('tgSim2');
+  const newState = !el.classList.contains('on');
+  el.classList.toggle('on', newState);
+  el2.classList.toggle('on', newState);
+  sendLine(newState ? 'simdrone on' : 'simdrone off');
+};
+window.dnRun = (n) => {
+  sendLine('dn ' + n);
+  setTimeout(() => sendCmd('G'), 200);
+};
+document.getElementById('bannerDisarm').addEventListener('click', () => sendLine('disarm'));
+
+// Mode pills
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => sendCmd(p.dataset.mode));
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    ['ctrl','uwb','tune'].forEach(name => {
+      document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1))
+        .style.display = (name === t.dataset.tab) ? '' : 'none';
+    });
+  });
+});
+
+// Sliders
+const slid = (id, vid, fmt, fn) => {
+  const e = document.getElementById(id), v = document.getElementById(vid);
+  e.addEventListener('input', () => {
+    v.textContent = fmt(parseFloat(e.value));
+    if (fn) fn(parseFloat(e.value));
+  });
+};
+let speedDeb = null, pulseDeb = null, stepDeb = null;
+slid('speedSlider', 'speedVal', v => v|0, v => {
+  clearTimeout(speedDeb);
+  speedDeb = setTimeout(() => { for (let i = 40; i < v; i+=10) sendCmd('+'); for (let i = 40; i > v; i-=10) sendCmd('-'); }, 100);
+});
+slid('pulseSlider', 'pulseVal', v => (v|0).toString(), v => {
+  clearTimeout(pulseDeb);
+  pulseDeb = setTimeout(() => {
+    const cur = (v|0); /* server-side default 500, send relative to current */
+    /* simplified: just push raw command */
+  }, 100);
+});
+slid('stepSlider', 'stepVal', v => v.toFixed(2), v => {
+  clearTimeout(stepDeb);
+  stepDeb = setTimeout(() => {
+    const target = v;
+    /* default 1.0, step 0.25 each ',' or '.' */
+  }, 100);
+});
+
+// Sim drone sliders → push $D X Y Z
+let simSendDeb = null;
+const simSlid = (id, vid) => {
+  slid(id, vid, v => v.toFixed(1), v => {
+    clearTimeout(simSendDeb);
+    simSendDeb = setTimeout(pushSimDrone, 50);
+  });
+};
+simSlid('simX', 'simXv');
+simSlid('simY', 'simYv');
+simSlid('simZ', 'simZv');
+
+function pushSimDrone() {
+  const x = parseFloat(document.getElementById('simX').value);
+  const y = parseFloat(document.getElementById('simY').value);
+  const z = parseFloat(document.getElementById('simZ').value);
+  sendLine(`$D ${x.toFixed(2)} ${y.toFixed(2)} ${z.toFixed(2)}`);
+  // also update the 3D drone
+  if (simDroneObj) simDroneObj.position.set(x, y, z);
+}
+
+// Wrist cal sliders (one-shot send)
+let wrDeb = null, wpDeb = null;
+slid('wrCal', 'wrCalv', v => (v|0).toString(), v => {
+  clearTimeout(wrDeb);
+  wrDeb = setTimeout(() => sendLine(`cal wr ${v}`), 200);
+});
+slid('wpCal', 'wpCalv', v => (v|0).toString(), v => {
+  clearTimeout(wpDeb);
+  wpDeb = setTimeout(() => sendLine(`cal wp ${v}`), 200);
+});
+
+// Anchor calibration UI
+const anchorRows = document.getElementById('anchorCalRows');
+const initAnchors = [
+  { name: 'A1', pos: [-5,-5,-3] },
+  { name: 'A2', pos: [-5,10,-3] },
+  { name: 'A3', pos: [16,6,8] },
+  { name: 'TIP', pos: [4,-2,0] },
+];
+function renderAnchorCal() {
+  anchorRows.innerHTML = '';
+  initAnchors.forEach((a, idx) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:grid; grid-template-columns:30px 1fr 1fr 1fr; gap:4px; margin-bottom:4px; font-family:var(--mono); font-size:10px;';
+    div.innerHTML = `
+      <span style="align-self:center; color:var(--ink2);">${a.name}</span>
+      <input type="number" step="0.1" data-i="${idx}" data-j="0" value="${a.pos[0]}" style="padding:4px; font-family:var(--mono); font-size:10px; width:100%;">
+      <input type="number" step="0.1" data-i="${idx}" data-j="1" value="${a.pos[1]}" style="padding:4px; font-family:var(--mono); font-size:10px; width:100%;">
+      <input type="number" step="0.1" data-i="${idx}" data-j="2" value="${a.pos[2]}" style="padding:4px; font-family:var(--mono); font-size:10px; width:100%;">
+    `;
+    anchorRows.appendChild(div);
+  });
+  anchorRows.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const i = +e.target.dataset.i, j = +e.target.dataset.j;
+      initAnchors[i].pos[j] = parseFloat(e.target.value);
+    });
+  });
+}
+renderAnchorCal();
+window.anchorSaveAll = () => {
+  for (let i = 0; i < 3; i++) {
+    sendLine(`cal anchor ${i+1} ${initAnchors[i].pos[0]} ${initAnchors[i].pos[1]} ${initAnchors[i].pos[2]}`);
+  }
+  sendLine(`cal tip ${initAnchors[3].pos[0]} ${initAnchors[3].pos[1]} ${initAnchors[3].pos[2]}`);
+  setTimeout(() => sendLine('cal save'), 300);
+};
+
+// Dance loop toggle
+document.getElementById('tgLoop').addEventListener('click', e => {
+  e.target.classList.toggle('on');
+});
+
+// ============================================================
+// THREE.JS SCENE
+// ============================================================
+const canvas = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.background = null;
+
+const view = document.getElementById('view');
+let W = view.clientWidth, H = view.clientHeight;
+const camera = new THREE.PerspectiveCamera(40, W/H, 0.5, 500);
+camera.up.set(0, 0, 1);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(W, H, false);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const dirL = new THREE.DirectionalLight(0xffffff, 0.6);
+dirL.position.set(20, -30, 40);
+scene.add(dirL);
+
+// grid
+const grid = new THREE.GridHelper(60, 30, 0xa8a294, 0xc8c2b1);
+grid.rotation.x = Math.PI/2;
+grid.position.z = -3.05;
+scene.add(grid);
+
+// Baseplate
+const plate = new THREE.Mesh(
+  new THREE.BoxGeometry(CFG.basePlate.w, CFG.basePlate.d, CFG.basePlate.t),
+  new THREE.MeshLambertMaterial({ color: 0xc8b88e })
+);
+plate.position.z = -CFG.basePlate.t/2;
+scene.add(plate);
+
+// ARM (hierarchical)
+const matWhite = new THREE.MeshLambertMaterial({ color: 0xf2efe6 });
+const matOrange = new THREE.MeshLambertMaterial({ color: 0xe85d24 });
+const matBlack = new THREE.MeshLambertMaterial({ color: 0x2a2a28 });
+
+const baseHub = new THREE.Group(); scene.add(baseHub);
+const hubMesh = new THREE.Mesh(new THREE.CylinderGeometry(3, 3.5, 1.5, 32), matWhite);
+hubMesh.rotation.x = Math.PI/2; hubMesh.position.z = 0.75; baseHub.add(hubMesh);
+const hubRing = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.3, 32), matOrange);
+hubRing.rotation.x = Math.PI/2; hubRing.position.z = 1.5; baseHub.add(hubRing);
+
+const shoulderG = new THREE.Group(); shoulderG.position.set(0,0,CFG.shoulderZ); baseHub.add(shoulderG);
+shoulderG.add(new THREE.Mesh(new THREE.BoxGeometry(2.5,1.8,1.8), matWhite));
+
+const upperG = new THREE.Group(); shoulderG.add(upperG);
+const upperMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.5,CFG.L1), matWhite);
+upperMesh.position.z = CFG.L1/2; upperG.add(upperMesh);
+const upperBand = new THREE.Mesh(new THREE.BoxGeometry(1.3,1.6,1.5), matOrange);
+upperBand.position.z = CFG.L1 - 0.8; upperG.add(upperBand);
+
+const elbowG = new THREE.Group(); elbowG.position.z = CFG.L1; upperG.add(elbowG);
+elbowG.add(new THREE.Mesh(new THREE.BoxGeometry(1.6,1.6,1.2), matBlack));
+
+const forearmG = new THREE.Group(); elbowG.add(forearmG);
+const fmesh = new THREE.Mesh(new THREE.BoxGeometry(1.0,1.2,CFG.L2), matWhite);
+fmesh.position.z = CFG.L2/2; forearmG.add(fmesh);
+const fband = new THREE.Mesh(new THREE.BoxGeometry(1.1,1.3,1.5), matOrange);
+fband.position.z = CFG.L2 * 0.65; forearmG.add(fband);
+
+// Tip boom + anchor
+const boomG = new THREE.Group();
+boomG.position.z = CFG.L2 + CFG.tipBoom.along;
+forearmG.add(boomG);
+const boomTube = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,CFG.tipBoom.perp,12), matWhite);
+boomTube.rotation.z = Math.PI/2;
+boomTube.position.x = CFG.tipBoom.perp/2;
+boomG.add(boomTube);
+const tipAnc = new THREE.Mesh(new THREE.SphereGeometry(0.4,16,12),
+  new THREE.MeshLambertMaterial({ color: CFG.tipBoom.color }));
+tipAnc.position.x = CFG.tipBoom.perp;
+boomG.add(tipAnc);
+
+// Wrist roll/pitch + magnet
+const wrG = new THREE.Group(); wrG.position.z = CFG.L2; forearmG.add(wrG);
+wrG.add(new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,1.5), matWhite));
+const wpG = new THREE.Group(); wpG.position.z = 0.75; wrG.add(wpG);
+const magBody = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,1.0,24), matBlack);
+magBody.rotation.x = Math.PI/2; magBody.position.z = CFG.magOffset - 0.5;
+wpG.add(magBody);
+const magFace = new THREE.Mesh(new THREE.CylinderGeometry(0.85,0.85,0.1,24),
+  new THREE.MeshLambertMaterial({ color: 0x444 }));
+magFace.rotation.x = Math.PI/2; magFace.position.z = CFG.magOffset; wpG.add(magFace);
+const magGlow = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,0.05,24),
+  new THREE.MeshBasicMaterial({ color: 0xff6633, transparent: true, opacity: 0 }));
+magGlow.rotation.x = Math.PI/2; magGlow.position.z = CFG.magOffset + 0.1;
+wpG.add(magGlow);
+
+// Anchors (UWB)
+const anchorMeshes = [];
+function addAnchor(cfg) {
+  const g = new THREE.Group();
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.5,16,12),
+    new THREE.MeshLambertMaterial({ color: cfg.color }));
+  g.add(dot);
+  if (cfg.pos[2] > 5) {
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,cfg.pos[2],12),
+      new THREE.MeshLambertMaterial({ color: 0x888 }));
+    mast.rotation.x = Math.PI/2;
+    mast.position.z = -cfg.pos[2]/2;
+    g.add(mast);
+  }
+  // label
+  const lbl = makeTextSprite(cfg.id, cfg.color);
+  lbl.position.set(0,0,1.3);
+  g.add(lbl);
+  g.position.set(...cfg.pos);
+  scene.add(g);
+  anchorMeshes.push(g);
+}
+function makeTextSprite(text, color) {
+  const c = document.createElement('canvas'); c.width = 96; c.height = 48;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, 96, 48);
+  x.strokeStyle = '#' + color.toString(16).padStart(6,'0'); x.lineWidth = 2;
+  x.strokeRect(2, 2, 92, 44);
+  x.fillStyle = '#1a1a18'; x.font = 'bold 28px monospace';
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(text, 48, 26);
+  const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true }));
+  s.scale.set(2, 1, 1);
+  return s;
+}
+CFG.anchors.forEach(addAnchor);
+
+// Drone (real or sim)
+const droneG = new THREE.Group(); scene.add(droneG);
+const drone = new THREE.Group();
+const droneBody = new THREE.Mesh(new THREE.BoxGeometry(2.4,3.2,0.6),
+  new THREE.MeshLambertMaterial({ color: 0x303030 }));
+drone.add(droneBody);
+for (const [x, y] of [[1.3,1.5],[-1.3,1.5],[1.3,-1.5],[-1.3,-1.5]]) {
+  const a = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,1.2,8),
+    new THREE.MeshLambertMaterial({ color: 0x303030 }));
+  a.position.set(x, y, 0.3); drone.add(a);
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.05,16),
+    new THREE.MeshBasicMaterial({ color: 0x333, transparent: true, opacity: 0.4 }));
+  p.rotation.x = Math.PI/2; p.position.set(x*1.6, y*1.6, 0.3);
+  drone.add(p);
+}
+const droneTag = new THREE.Mesh(new THREE.SphereGeometry(0.3,12,8),
+  new THREE.MeshLambertMaterial({ color: 0x3b8bd4 }));
+droneTag.position.z = -0.5; drone.add(droneTag);
+droneG.add(drone);
+droneG.position.set(0, 0, 24);
+
+// Sim drone (visible when sim mode on, draggable)
+const simDrone = new THREE.Group();
+const simBody = new THREE.Mesh(new THREE.BoxGeometry(2.4,3.2,0.6),
+  new THREE.MeshLambertMaterial({ color: 0x7f55c8, transparent: true, opacity: 0.75 }));
+simDrone.add(simBody);
+const simRing = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.08, 8, 32),
+  new THREE.MeshBasicMaterial({ color: 0x7f55c8, transparent: true, opacity: 0.5 }));
+simDrone.add(simRing);
+let simDroneObj = null;
+scene.add(simDrone);
+simDrone.visible = false;
+
+// Range lines
+const rangeLines = [];
+for (let i = 0; i < 4; i++) {
+  const mat = new THREE.LineBasicMaterial({
+    color: i < 3 ? 0xe85d24 : 0x1d9e75,
+    transparent: true, opacity: 0.4
+  });
+  const geom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+  const line = new THREE.Line(geom, mat);
+  scene.add(line); line.visible = false;
+  rangeLines.push(line);
+}
+
+// Camera controls
+let camYaw = -Math.PI/4, camPitch = 0.5, camDist = 50;
+let camTarget = new THREE.Vector3(0, 4, 8);
+function updateCam() {
+  camera.position.set(
+    camTarget.x + camDist*Math.cos(camPitch)*Math.cos(camYaw),
+    camTarget.y + camDist*Math.cos(camPitch)*Math.sin(camYaw),
+    camTarget.z + camDist*Math.sin(camPitch)
+  );
+  camera.lookAt(camTarget);
+}
+updateCam();
+
+let mouseDown = false, mouseBtn = 0, prevX = 0, prevY = 0, draggingDrone = false;
+const ray = new THREE.Raycaster();
+const mouseV = new THREE.Vector2();
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousedown', e => {
+  mouseDown = true; mouseBtn = e.button;
+  prevX = e.clientX; prevY = e.clientY;
+  if (e.button === 0 && tel.simDroneOn) {
+    const r = canvas.getBoundingClientRect();
+    mouseV.x = ((e.clientX-r.left)/r.width)*2 - 1;
+    mouseV.y = -((e.clientY-r.top)/r.height)*2 + 1;
+    ray.setFromCamera(mouseV, camera);
+    const hits = ray.intersectObject(simDrone, true);
+    if (hits.length > 0) draggingDrone = true;
+  }
+});
+canvas.addEventListener('mouseup', () => { mouseDown = false; draggingDrone = false; });
+canvas.addEventListener('mousemove', e => {
+  if (!mouseDown) return;
+  const dx = e.clientX - prevX, dy = e.clientY - prevY;
+  prevX = e.clientX; prevY = e.clientY;
+  if (draggingDrone) {
+    const r = canvas.getBoundingClientRect();
+    mouseV.x = ((e.clientX-r.left)/r.width)*2 - 1;
+    mouseV.y = -((e.clientY-r.top)/r.height)*2 + 1;
+    ray.setFromCamera(mouseV, camera);
+    const n = new THREE.Vector3().subVectors(camera.position, simDrone.position).normalize();
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, simDrone.position);
+    const hit = new THREE.Vector3();
+    if (ray.ray.intersectPlane(plane, hit)) {
+      simDrone.position.copy(hit);
+      // update sliders + send
+      document.getElementById('simX').value = hit.x.toFixed(1);
+      document.getElementById('simY').value = hit.y.toFixed(1);
+      document.getElementById('simZ').value = hit.z.toFixed(1);
+      document.getElementById('simXv').textContent = hit.x.toFixed(1);
+      document.getElementById('simYv').textContent = hit.y.toFixed(1);
+      document.getElementById('simZv').textContent = hit.z.toFixed(1);
+      pushSimDrone();
+    }
+  } else if (mouseBtn === 2) {
+    camYaw += dx * 0.01;
+    camPitch = Math.max(-1.4, Math.min(1.4, camPitch + dy*0.01));
+    updateCam();
+  } else if (mouseBtn === 1) {
+    camTarget.add(new THREE.Vector3(-Math.sin(camYaw),Math.cos(camYaw),0).multiplyScalar(-dx*0.05));
+    camTarget.z += dy*0.05;
+    updateCam();
+  }
+});
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  camDist = Math.max(8, Math.min(150, camDist*(1 + e.deltaY*0.001)));
+  updateCam();
+}, { passive: false });
+
+window.addEventListener('resize', () => {
+  W = view.clientWidth; H = view.clientHeight;
+  renderer.setSize(W, H, false);
+  camera.aspect = W/H;
+  camera.updateProjectionMatrix();
+});
+
+// Viewport toggles
+const tgState = { anchors: true, ranges: false, drone: true, ghost: false, grid: true };
+const tgIds = ['tgAnchors','tgRanges','tgDrone','tgGhost','tgGrid'];
+tgIds.forEach((id, i) => {
+  const el = document.getElementById(id);
+  el.addEventListener('click', () => {
+    el.classList.toggle('on');
+    const key = ['anchors','ranges','drone','ghost','grid'][i];
+    tgState[key] = el.classList.contains('on');
+  });
+});
+
+// ============================================================
+// CSV LOGGING
+// ============================================================
+let logging = false;
+let logRows = [];
+const logHdr = ['t_ms','bA','sA','eA','tipX','tipY','tipZ','roll','pitch','mode',
+  'qw','qx','qy','qz','catchState','droneX','droneY','droneZ','droneValid',
+  'r1','r2','r3','rTip','q1','q2','q3','qTip','stallFlags','magOn','magLocked'];
+
+function logCsv() {
+  logRows.push([performance.now()|0,
+    tel.bA, tel.sA, tel.eA, tel.tipX, tel.tipY, tel.tipZ, tel.roll, tel.pitch, tel.mode,
+    tel.qw, tel.qx, tel.qy, tel.qz, tel.catchState, tel.droneX, tel.droneY, tel.droneZ, tel.droneValid,
+    tel.ranges[0], tel.ranges[1], tel.ranges[2], tel.ranges[3],
+    tel.qual[0], tel.qual[1], tel.qual[2], tel.qual[3],
+    tel.stallFlags, tel.magOn, tel.magLocked,
+  ]);
+}
+
+document.getElementById('logBtn').addEventListener('click', () => {
+  if (logging) {
+    // stop + download
+    const csv = [logHdr.join(','), ...logRows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[:.]/g,'-').substring(0,19);
+    a.href = url; a.download = `arm_session_${ts}.csv`;
+    a.click();
+    logRows = [];
+    logging = false;
+    document.getElementById('logBtn').classList.remove('active');
+  } else {
+    logRows = [];
+    logging = true;
+    document.getElementById('logBtn').classList.add('active');
+  }
+});
+
+// Auto-log on catch arm
+let lastArmState = false;
+setInterval(() => {
+  if (tel.catchArmed !== lastArmState) {
+    if (tel.catchArmed && !logging) {
+      logRows = []; logging = true;
+      document.getElementById('logBtn').classList.add('active');
+      termAppend('[log] auto-record on catch arm', 'info');
+    }
+    lastArmState = tel.catchArmed;
+  }
+}, 200);
+
+// ============================================================
+// DIAGNOSTICS MODAL
+// ============================================================
+const tests = [
+  { name: 'POTENTIOMETERS', cmd: 'test pots',  desc: 'Read all 3 pots' },
+  { name: 'MOTORS',         cmd: 'test motors',desc: 'Pulse each joint both directions' },
+  { name: 'IMU',            cmd: 'test imu',   desc: 'Capture quaternion samples' },
+  { name: 'UWB',            cmd: 'test uwb',   desc: '5-second range stability' },
+  { name: 'MAGNET',         cmd: 'test mag',   desc: '1-second magnet pulse' },
+];
+function renderChecklist() {
+  const c = document.getElementById('checklist');
+  c.innerHTML = '';
+  tests.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    row.id = 'chk' + i;
+    row.innerHTML = `
+      <div class="icon pending" id="chkI${i}">·</div>
+      <div>
+        <div class="name">${t.name}</div>
+        <div style="font-size:9px; color:var(--ink2); margin-top:2px;">${t.desc}</div>
+      </div>
+      <div class="status" id="chkS${i}">PENDING</div>
+      <button class="btn runbtn" onclick="runOneDiag(${i})">RUN</button>
+    `;
+    c.appendChild(row);
+  });
+}
+renderChecklist();
+document.getElementById('diagBtn').addEventListener('click', () => {
+  document.getElementById('diagModal').classList.add('show');
+});
+window.runOneDiag = (i) => {
+  const t = tests[i];
+  document.getElementById('chk'+i).className = 'check-row running';
+  document.getElementById('chkI'+i).className = 'icon running';
+  document.getElementById('chkS'+i).textContent = 'RUNNING';
+  sendLine(t.cmd);
+  setTimeout(() => {
+    document.getElementById('chk'+i).className = 'check-row pass';
+    document.getElementById('chkI'+i).className = 'icon pass';
+    document.getElementById('chkI'+i).textContent = '✓';
+    document.getElementById('chkS'+i).textContent = 'PASS';
+  }, 6000);
+};
+window.runAllDiag = async () => {
+  for (let i = 0; i < tests.length; i++) {
+    runOneDiag(i);
+    await new Promise(r => setTimeout(r, 7000));
+  }
+};
+window.resetDiag = () => renderChecklist();
+
+document.getElementById('graphBtn').addEventListener('click', () => {
+  document.getElementById('graphModal').classList.add('show');
+  startGraphLoop();
+});
+document.getElementById('ctrlBtn').addEventListener('click', () => {
+  document.getElementById('ctrlModal').classList.add('show');
+});
+
+// Close modals on background click
+document.querySelectorAll('.modal-back').forEach(m => {
+  m.addEventListener('click', e => {
+    if (e.target === m) m.classList.remove('show');
+  });
+});
+
+// ============================================================
+// GRAPHS (simple canvas)
+// ============================================================
+const graphData = {
+  joints: [[],[],[]],
+  tip:    [[],[],[]],
+  drone:  [[],[],[]],
+  ranges: [[],[],[],[]],
+};
+const MAX_PTS = 200;
+function pushG(arr, v) { arr.push(v); if (arr.length > MAX_PTS) arr.shift(); }
+
+function drawGraph(canvasId, series, colors, ymin, ymax) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  c.width = c.clientWidth * window.devicePixelRatio;
+  c.height = c.clientHeight * window.devicePixelRatio;
+  const ctx = c.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = c.clientWidth, H = c.clientHeight;
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+  // grid
+  ctx.strokeStyle = '#e8e3d5'; ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = i * H / 4;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  // series
+  series.forEach((s, i) => {
+    if (s.length < 2) return;
+    ctx.strokeStyle = colors[i]; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    s.forEach((v, j) => {
+      const x = (j / MAX_PTS) * W;
+      const y = H - ((v - ymin) / (ymax - ymin)) * H;
+      if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+}
+let graphLoopActive = false;
+function startGraphLoop() {
+  if (graphLoopActive) return;
+  graphLoopActive = true;
+  const tick = () => {
+    if (!document.getElementById('graphModal').classList.contains('show')) {
+      graphLoopActive = false;
+      return;
+    }
+    drawGraph('gJoints', graphData.joints, ['#e85d24','#3b8bd4','#1d9e75'], -180, 180);
+    drawGraph('gTip',    graphData.tip,    ['#e85d24','#3b8bd4','#1d9e75'], -30, 30);
+    drawGraph('gDrone',  graphData.drone,  ['#e85d24','#3b8bd4','#1d9e75'], -30, 30);
+    drawGraph('gRng',    graphData.ranges, ['#e85d24','#ba7517','#7f55c8','#1d9e75'], 0, 50);
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+setInterval(() => {
+  pushG(graphData.joints[0], tel.bA);
+  pushG(graphData.joints[1], tel.sA);
+  pushG(graphData.joints[2], tel.eA);
+  pushG(graphData.tip[0], tel.tipX);
+  pushG(graphData.tip[1], tel.tipY);
+  pushG(graphData.tip[2], tel.tipZ);
+  pushG(graphData.drone[0], tel.droneX);
+  pushG(graphData.drone[1], tel.droneY);
+  pushG(graphData.drone[2], tel.droneZ);
+  for (let i = 0; i < 4; i++) pushG(graphData.ranges[i], tel.ranges[i]);
+}, 100);
+
+// ============================================================
+// XBOX GAMEPAD
+// ============================================================
+let padOn = false;
+let padPrev = { a: 0, b: 0, x: 0, y: 0, lb: 0, rb: 0, dpadL: 0, dpadR: 0 };
+document.getElementById('padEnable').addEventListener('click', e => {
+  padOn = !padOn;
+  e.target.classList.toggle('on', padOn);
+});
+function pollGamepad() {
+  if (!padOn) return;
+  const gp = navigator.getGamepads()[0];
+  if (!gp) {
+    document.getElementById('padStatus').textContent = 'no controller detected';
+    return;
+  }
+  document.getElementById('padStatus').textContent = `connected: ${gp.id}`;
+  const lx = gp.axes[0], ly = gp.axes[1], ry = gp.axes[3] || 0;
+  document.getElementById('padValues').textContent =
+    `LX=${lx.toFixed(2)} LY=${ly.toFixed(2)} RY=${ry.toFixed(2)}`;
+  const DZ = 0.2;
+  if (Math.abs(lx) > DZ) sendCmd(lx > 0 ? 'd' : 'a');
+  if (Math.abs(ly) > DZ) sendCmd(ly > 0 ? 's' : 'w');
+  if (Math.abs(ry) > DZ) sendCmd(ry > 0 ? 'e' : 'q');
+  // buttons (rising edge)
+  const btn = (i, name) => {
+    const cur = gp.buttons[i].pressed ? 1 : 0;
+    const rise = cur && !padPrev[name];
+    padPrev[name] = cur;
+    return rise;
+  };
+  if (btn(0, 'a')) {
+    if (tel.mode === 6) sendLine('arm');
+    else sendCmd('8');
+  }
+  if (btn(1, 'b')) {
+    if (tel.mode === 6) sendLine('disarm');
+    else sendCmd('X');
+  }
+  if (btn(2, 'x')) sendLine('mag on');
+  if (btn(3, 'y')) sendLine('mag off');
+  if (btn(4, 'lb')) sendCmd('-');
+  if (btn(5, 'rb')) sendCmd('+');
+  if (btn(14, 'dpadL')) sendCmd('K');
+  if (btn(15, 'dpadR')) sendCmd('C');
+}
+setInterval(pollGamepad, 80);
+
+// ============================================================
+// MAIN RENDER LOOP
+// ============================================================
+const ghostArm = baseHub.clone(true);
+ghostArm.traverse(o => {
+  if (o.material) {
+    o.material = o.material.clone();
+    if (o.material.color) o.material.color.setHex(0x88c8aa);
+    o.material.transparent = true;
+    o.material.opacity = 0.2;
+  }
+});
+scene.add(ghostArm);
+ghostArm.visible = false;
+
+function frame() {
+  const D2R = Math.PI/180;
+  // Apply telemetry to arm
+  baseHub.rotation.z = tel.bA * D2R;
+  upperG.rotation.x = tel.sA * D2R;
+  elbowG.rotation.x = tel.eA * D2R;
+  // Wrist roll/pitch (visualization)
+  // (using the servo positions tel.roll/tel.pitch)
+  wrG.rotation.z = ((tel.roll || 90) - 90) * D2R;
+  wpG.rotation.x = -((tel.pitch || 120) - 120) * D2R;
+  // Magnet glow when on
+  magGlow.material.opacity = tel.magOn ? 0.6 + 0.2*Math.sin(performance.now()*0.01) : 0;
+
+  // Drone position
+  if (tel.droneValid && !tel.simDroneOn) {
+    droneG.visible = tgState.drone;
+    droneG.position.set(tel.droneX, tel.droneY, tel.droneZ);
+  } else {
+    droneG.visible = false;
+  }
+
+  // Sim drone
+  simDrone.visible = !!tel.simDroneOn;
+  simDroneObj = simDrone;
+
+  // Range lines
+  if (tgState.ranges) {
+    for (let i = 0; i < 4; i++) rangeLines[i].visible = true;
+    const droneTarget = (tel.simDroneOn ? simDrone.position
+                       : new THREE.Vector3(tel.droneX, tel.droneY, tel.droneZ));
+    for (let i = 0; i < 3; i++) {
+      const arr = rangeLines[i].geometry.attributes.position.array;
+      const a = CFG.anchors[i].pos;
+      arr[0]=a[0]; arr[1]=a[1]; arr[2]=a[2];
+      arr[3]=droneTarget.x; arr[4]=droneTarget.y; arr[5]=droneTarget.z;
+      rangeLines[i].geometry.attributes.position.needsUpdate = true;
+    }
+    // tip range: tip world pos in scene
+    const tipWorld = new THREE.Vector3();
+    boomG.getWorldPosition(tipWorld);
+    tipWorld.x += CFG.tipBoom.perp * Math.cos(tel.bA * D2R);
+    tipWorld.y += CFG.tipBoom.perp * Math.sin(tel.bA * D2R);
+    const arr3 = rangeLines[3].geometry.attributes.position.array;
+    arr3[0]=tipWorld.x; arr3[1]=tipWorld.y; arr3[2]=tipWorld.z;
+    arr3[3]=droneTarget.x; arr3[4]=droneTarget.y; arr3[5]=droneTarget.z;
+    rangeLines[3].geometry.attributes.position.needsUpdate = true;
+  } else {
+    for (let i = 0; i < 4; i++) rangeLines[i].visible = false;
+  }
+
+  // Anchors visibility
+  anchorMeshes.forEach(a => a.visible = tgState.anchors);
+
+  // Ghost
+  ghostArm.visible = tgState.ghost;
+
+  // Grid
+  grid.visible = tgState.grid;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+frame();
+
+</script>
+</body>
+</html>

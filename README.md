@@ -20,6 +20,7 @@ drone-catch-system/
   arm/
     teensy_firmware/        # robotic arm controller firmware
     web_control/            # browser UI for arm + camera control over Web Serial
+    v4_release/             # newer Teensy + multi-anchor UWB release that now drives the host tracker design
   hand/
     servo_controller/       # reserved for the future hand/end-effector servo code
 ```
@@ -29,6 +30,7 @@ drone-catch-system/
 - `vision/black-vision-tracker` runs on the arm-side computer or SBC.
 - `vision/esp32_cam_firmware` runs on the ESP32-CAM.
 - `arm/teensy_firmware` runs on the Teensy that drives the robotic arm.
+- `arm/v4_release` contains the newer arm firmware with the 3-base-anchor plus tip-anchor UWB flow.
 - `arm/web_control` runs in Chrome or Edge using Web Serial.
 - `hand/servo_controller` is reserved for the future gripper/hand servo component.
 
@@ -67,5 +69,6 @@ Then open `http://localhost:8000/arm_ctrlv4.html`.
 ## Notes
 
 - The original attached robotic-arm files were reorganized into subsystem folders, but the code itself was preserved.
+- The host tracker now mirrors the newer arm-side UWB flow: fresh multi-anchor UWB is preferred first, then hybrid UWB plus vision, then camera-only fallback.
 - The newer OpenCV/UWB tracker lives alongside the older ESP32-CAM firmware so you can compare both approaches in one repo.
 - The future hand-servo code should go under `hand/servo_controller`.
