@@ -1,18 +1,17 @@
 # Hand
 
-Reserved area for the future hand/end-effector servo controller.
+Hand and end-effector control area for the drone-catching system.
 
 ## Suggested Location
 
-Put the future hand code under:
+Current hand code lives under:
 
 ```text
 hand/servo_controller/
 ```
 
-## Suggested Scope
+## Current Scope
 
-- open/close or grasp-angle commands
-- wrist-hand coordination hooks
-- serial protocol or firmware shared with the arm controller
-- calibration values for the specific hand geometry
+- 5-servo Arduino firmware for the hand
+- a line-based serial protocol that works over the Arduino USB serial port
+- calibration and motion-limit placeholders for a specific hand geometry

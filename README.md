@@ -7,7 +7,7 @@ Monorepo for the drone-catching project, combining:
 - Teensy-based robotic arm control
 - browser-based arm control UI
 - printable visual markers
-- placeholder space for the future hand-servo controller
+- an Arduino-only 5-servo hand controller
 
 ## Repository Layout
 
@@ -22,7 +22,7 @@ drone-catch-system/
     web_control/            # browser UI for arm + camera control over Web Serial
     v4_release/             # newer Teensy + multi-anchor UWB release that now drives the host tracker design
   hand/
-    servo_controller/       # reserved for the future hand/end-effector servo code
+    servo_controller/       # Arduino-only 5-servo hand controller firmware and protocol
 ```
 
 ## What Runs Where
@@ -32,7 +32,7 @@ drone-catch-system/
 - `arm/teensy_firmware` runs on the Teensy that drives the robotic arm.
 - `arm/v4_release` contains the newer arm firmware with the 3-base-anchor plus tip-anchor UWB flow.
 - `arm/web_control` runs in Chrome or Edge using Web Serial.
-- `hand/servo_controller` is reserved for the future gripper/hand servo component.
+- `hand/servo_controller` contains the Arduino-only hand controller for a 5-servo gripper or finger set.
 
 ## Quick Start
 
@@ -66,9 +66,17 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000/arm_ctrlv4.html`.
 
+### Hand controller
+
+Open [hand/servo_controller/README.md](/Users/spershgoyal/Documents/Playground/drone-catch-system/hand/servo_controller/README.md:1) for the Arduino-only 5-servo hand stack. It assumes:
+
+- one Arduino controlling all five servo signal lines
+- separate 5V to 6V servo power
+- common ground between the Arduino and the servo supply
+
 ## Notes
 
 - The original attached robotic-arm files were reorganized into subsystem folders, but the code itself was preserved.
 - The host tracker now mirrors the newer arm-side UWB flow: fresh multi-anchor UWB is preferred first, then hybrid UWB plus vision, then camera-only fallback.
 - The newer OpenCV/UWB tracker lives alongside the older ESP32-CAM firmware so you can compare both approaches in one repo.
-- The future hand-servo code should go under `hand/servo_controller`.
+- A staged validation sequence now lives in [TESTING.md](/Users/spershgoyal/Documents/Playground/drone-catch-system/TESTING.md:1).
