@@ -1,141 +1,210 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="3600" height="1300" viewBox="0 0 3600 1300">
+<svg xmlns="http://www.w3.org/2000/svg" width="3600" height="1700" viewBox="0 0 3600 1700">
   <defs>
     <style>
       .bg { fill: #ffffff; }
-      .box { fill: #ffffff; stroke: #000000; stroke-width: 4; rx: 14; ry: 14; }
-      .group { fill: #ffffff; stroke: #000000; stroke-width: 3; }
       .line { fill: none; stroke: #000000; stroke-width: 4; }
       .dash { fill: none; stroke: #000000; stroke-width: 3; stroke-dasharray: 14 10; }
-      .title { font-family: Arial, Helvetica, sans-serif; font-size: 44px; font-weight: 700; fill: #000000; }
+      .process { fill: #ffffff; stroke: #000000; stroke-width: 4; }
+      .io { fill: #ffffff; stroke: #000000; stroke-width: 4; }
+      .decision { fill: #ffffff; stroke: #000000; stroke-width: 4; }
+      .term { fill: #ffffff; stroke: #000000; stroke-width: 4; }
+      .group { fill: #ffffff; stroke: #000000; stroke-width: 3; }
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 42px; font-weight: 700; fill: #000000; }
       .section { font-family: Arial, Helvetica, sans-serif; font-size: 28px; font-weight: 700; fill: #000000; }
-      .ref { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; fill: #000000; }
-      .label { font-family: Arial, Helvetica, sans-serif; font-size: 30px; fill: #000000; }
-      .small { font-family: Arial, Helvetica, sans-serif; font-size: 22px; fill: #000000; }
+      .legend { font-family: Arial, Helvetica, sans-serif; font-size: 22px; fill: #000000; }
+      .ref { font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: 700; fill: #000000; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 28px; fill: #000000; }
+      .small { font-family: Arial, Helvetica, sans-serif; font-size: 21px; fill: #000000; }
+      .tiny { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #000000; }
     </style>
     <marker id="arrow" markerWidth="16" markerHeight="16" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L12,6 L0,12 z" fill="#000000"/>
     </marker>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="3600" height="1300"/>
-  <text class="title" x="70" y="70">Drone Catch System - Whole-System Flowchart</text>
+  <rect class="bg" x="0" y="0" width="3600" height="1700"/>
+  <text class="title" x="70" y="70">Drone Catch System - Whole-System Logic Flowchart</text>
+
+  <!-- legend -->
+  <rect class="group" x="2660" y="95" width="860" height="170"/>
+  <text class="section" x="2700" y="135">Legend</text>
+  <rect class="term" x="2700" y="160" rx="30" ry="30" width="120" height="46"/>
+  <text class="legend" x="2845" y="191">Start / end state</text>
+  <rect class="process" x="3020" y="160" width="120" height="46"/>
+  <text class="legend" x="3165" y="191">Process step</text>
+  <polygon class="io" points="2700,225 2810,225 2830,271 2720,271"/>
+  <text class="legend" x="2845" y="255">Input / output</text>
+  <polygon class="decision" points="3065,225 3120,248 3065,271 3010,248"/>
+  <text class="legend" x="3165" y="255">Decision</text>
 
   <!-- top group -->
-  <rect class="group" x="50" y="120" width="3500" height="470"/>
-  <text class="section" x="80" y="160">Main sensing and decision path</text>
+  <rect class="group" x="50" y="300" width="3500" height="610"/>
+  <text class="section" x="80" y="340">1. Sensing and target-state pipeline</text>
 
   <!-- bottom group -->
-  <rect class="group" x="50" y="650" width="3500" height="560"/>
-  <text class="section" x="80" y="690">Control, actuation, and feedback path</text>
+  <rect class="group" x="50" y="960" width="3500" height="670"/>
+  <text class="section" x="80" y="1000">2. Control, actuation, and feedback pipeline</text>
 
-  <!-- top row -->
-  <rect class="box" x="120" y="240" width="380" height="170"/>
-  <text class="ref" x="150" y="278">A1</text>
-  <text class="label" x="150" y="325">Drone target</text>
-  <text class="small" x="150" y="365">UWB tag and black visual marker</text>
+  <!-- top row elements -->
+  <rect class="term" x="110" y="470" rx="34" ry="34" width="250" height="80"/>
+  <text class="ref" x="145" y="500">A1</text>
+  <text class="label" x="145" y="535">Mission starts</text>
 
-  <rect class="box" x="600" y="210" width="460" height="110"/>
-  <text class="ref" x="630" y="248">A2</text>
-  <text class="label" x="630" y="292">ESP32-CAM firmware</text>
+  <polygon class="io" points="450,430 790,430 830,560 490,560"/>
+  <text class="ref" x="500" y="470">A2</text>
+  <text class="label" x="500" y="510">Inputs</text>
+  <text class="small" x="500" y="545">camera frames, UWB ranges, operator setup</text>
 
-  <rect class="box" x="600" y="350" width="460" height="110"/>
-  <text class="ref" x="630" y="388">A3</text>
-  <text class="label" x="630" y="432">3 base anchors + 1 tip anchor</text>
+  <rect class="process" x="930" y="430" width="360" height="130"/>
+  <text class="ref" x="965" y="470">A3</text>
+  <text class="label" x="965" y="510">Open links</text>
+  <text class="small" x="965" y="545">host tracker opens camera source</text>
+  <text class="small" x="965" y="575">and anchor serial ports</text>
 
-  <rect class="box" x="1160" y="240" width="470" height="170"/>
-  <text class="ref" x="1190" y="278">A4</text>
-  <text class="label" x="1190" y="325">Host tracker starts</text>
-  <text class="small" x="1190" y="365">opens camera stream and UWB serial links</text>
+  <rect class="process" x="1390" y="430" width="370" height="130"/>
+  <text class="ref" x="1425" y="470">A4</text>
+  <text class="label" x="1425" y="510">Detect target in frame</text>
+  <text class="small" x="1425" y="545">threshold black marker and pick</text>
+  <text class="small" x="1425" y="575">the best target center</text>
 
-  <rect class="box" x="1730" y="240" width="470" height="170"/>
-  <text class="ref" x="1760" y="278">A5</text>
-  <text class="label" x="1760" y="325">Vision detection</text>
-  <text class="small" x="1760" y="365">find black target center in each frame</text>
+  <polygon class="decision" points="1930,425 2055,495 1930,565 1805,495"/>
+  <text class="ref" x="1900" y="466">A5</text>
+  <text class="small" x="1860" y="505">marker</text>
+  <text class="small" x="1848" y="533">detected?</text>
 
-  <rect class="box" x="2300" y="240" width="500" height="170"/>
-  <text class="ref" x="2330" y="278">A6</text>
-  <text class="label" x="2330" y="325">Position fusion</text>
-  <text class="small" x="2330" y="365">prefer UWB, then hybrid, then vision fallback</text>
+  <polygon class="decision" points="2230,425 2370,495 2230,565 2090,495"/>
+  <text class="ref" x="2205" y="466">A6</text>
+  <text class="small" x="2148" y="505">3 fresh</text>
+  <text class="small" x="2135" y="533">UWB ranges?</text>
 
-  <rect class="box" x="2900" y="240" width="500" height="170"/>
-  <text class="ref" x="2930" y="278">A7</text>
-  <text class="label" x="2930" y="325">Target state output</text>
-  <text class="small" x="2930" y="365">XYZ, residual, source, capture_ready</text>
+  <rect class="process" x="2470" y="350" width="360" height="120"/>
+  <text class="ref" x="2505" y="388">A7</text>
+  <text class="label" x="2505" y="425">UWB trilateration</text>
+  <text class="small" x="2505" y="458">solve drone XYZ from anchors</text>
+
+  <polygon class="decision" points="2510,520 2650,590 2510,660 2370,590"/>
+  <text class="ref" x="2485" y="560">A8</text>
+  <text class="small" x="2430" y="598">partial UWB</text>
+  <text class="small" x="2427" y="626">or camera only?</text>
+
+  <rect class="process" x="2850" y="520" width="360" height="120"/>
+  <text class="ref" x="2885" y="558">A9</text>
+  <text class="label" x="2885" y="595">Hybrid or fallback solve</text>
+  <text class="small" x="2885" y="628">use hybrid solve or vision fallback</text>
+
+  <polygon class="io" points="3210,430 3490,430 3530,560 3250,560"/>
+  <text class="ref" x="3260" y="470">A10</text>
+  <text class="label" x="3260" y="510">Target state out</text>
+  <text class="small" x="3260" y="545">XYZ, residual, source, capture_ready</text>
 
   <!-- top arrows -->
-  <line class="line" x1="500" y1="295" x2="600" y2="265" marker-end="url(#arrow)"/>
-  <line class="line" x1="500" y1="355" x2="600" y2="405" marker-end="url(#arrow)"/>
-  <line class="line" x1="1060" y1="265" x2="1160" y2="295" marker-end="url(#arrow)"/>
-  <line class="line" x1="1060" y1="405" x2="1160" y2="355" marker-end="url(#arrow)"/>
-  <line class="line" x1="1630" y1="325" x2="1730" y2="325" marker-end="url(#arrow)"/>
-  <line class="line" x1="2200" y1="325" x2="2300" y2="325" marker-end="url(#arrow)"/>
-  <line class="line" x1="2800" y1="325" x2="2900" y2="325" marker-end="url(#arrow)"/>
+  <line class="line" x1="360" y1="510" x2="450" y2="495" marker-end="url(#arrow)"/>
+  <line class="line" x1="830" y1="495" x2="930" y2="495" marker-end="url(#arrow)"/>
+  <line class="line" x1="1290" y1="495" x2="1390" y2="495" marker-end="url(#arrow)"/>
+  <line class="line" x1="1760" y1="495" x2="1805" y2="495" marker-end="url(#arrow)"/>
+  <text class="tiny" x="1845" y="405">yes</text>
 
-  <!-- bottom row -->
-  <rect class="box" x="120" y="770" width="420" height="190"/>
-  <text class="ref" x="150" y="808">B1</text>
-  <text class="label" x="150" y="855">Web control UI</text>
-  <text class="small" x="150" y="895">operator connects serial, sees telemetry,</text>
-  <text class="small" x="150" y="925">and sends mode, pose, and catch commands</text>
+  <line class="line" x1="2055" y1="495" x2="2090" y2="495" marker-end="url(#arrow)"/>
+  <text class="tiny" x="2110" y="405">yes</text>
 
-  <rect class="box" x="650" y="770" width="480" height="190"/>
-  <text class="ref" x="680" y="808">B2</text>
-  <text class="label" x="680" y="855">Teensy arm firmware v4</text>
-  <text class="small" x="680" y="895">updates sensors, UWB, safety, motion,</text>
-  <text class="small" x="680" y="925">and the catch state machine</text>
+  <line class="line" x1="2370" y1="495" x2="2470" y2="410" marker-end="url(#arrow)"/>
+  <line class="line" x1="2230" y1="565" x2="2230" y2="590"/>
+  <line class="line" x1="2230" y1="590" x2="2370" y2="590" marker-end="url(#arrow)"/>
+  <text class="tiny" x="2238" y="580">no</text>
 
-  <rect class="box" x="1240" y="770" width="430" height="190"/>
-  <text class="ref" x="1270" y="808">B3</text>
-  <text class="label" x="1270" y="855">Arm outputs</text>
-  <text class="small" x="1270" y="895">base, shoulder, elbow, wrist, magnet</text>
+  <line class="line" x1="2830" y1="410" x2="3210" y2="495" marker-end="url(#arrow)"/>
+  <line class="line" x1="2650" y1="590" x2="2850" y2="580" marker-end="url(#arrow)"/>
+  <line class="line" x1="3210" y1="580" x2="3390" y2="580"/>
+  <line class="line" x1="3390" y1="580" x2="3390" y2="560" marker-end="url(#arrow)"/>
 
-  <rect class="box" x="1780" y="770" width="430" height="190"/>
-  <text class="ref" x="1810" y="808">B4</text>
-  <text class="label" x="1810" y="855">Hand command stage</text>
-  <text class="small" x="1810" y="895">host or operator sends pose and grasp</text>
-  <text class="small" x="1810" y="925">commands over Nano serial</text>
+  <line class="dash" x1="1930" y1="565" x2="1930" y2="700"/>
+  <line class="dash" x1="1930" y1="700" x2="2510" y2="700"/>
+  <line class="dash" x1="2510" y1="700" x2="2510" y2="660" marker-end="url(#arrow)"/>
+  <text class="tiny" x="1945" y="590">no</text>
 
-  <rect class="box" x="2320" y="770" width="460" height="190"/>
-  <text class="ref" x="2350" y="808">B5</text>
-  <text class="label" x="2350" y="855">Arduino Nano hand firmware</text>
-  <text class="small" x="2350" y="895">parses commands and steps five servo</text>
-  <text class="small" x="2350" y="925">targets toward open, pregrasp, or close</text>
+  <!-- bottom row elements -->
+  <polygon class="io" points="110,1110 470,1110 510,1240 150,1240"/>
+  <text class="ref" x="165" y="1150">B1</text>
+  <text class="label" x="165" y="1190">Operator and web UI</text>
+  <text class="small" x="165" y="1225">mode, pose, catch, tuning, and serial monitor</text>
 
-  <rect class="box" x="2890" y="770" width="470" height="190"/>
-  <text class="ref" x="2920" y="808">B6</text>
-  <text class="label" x="2920" y="855">Hand outputs</text>
-  <text class="small" x="2920" y="895">thumb, index, middle, ring, and pinky</text>
-  <text class="small" x="2920" y="925">servos shape the capture pose</text>
+  <rect class="process" x="640" y="1110" width="390" height="130"/>
+  <text class="ref" x="675" y="1150">B2</text>
+  <text class="label" x="675" y="1190">Arm firmware main loop</text>
+  <text class="small" x="675" y="1225">update sensors, IMU, UWB, and motion state</text>
+
+  <polygon class="decision" points="1220,1100 1355,1175 1220,1250 1085,1175"/>
+  <text class="ref" x="1195" y="1142">B3</text>
+  <text class="small" x="1132" y="1180">safe to move?</text>
+
+  <rect class="process" x="1480" y="1035" width="420" height="120"/>
+  <text class="ref" x="1515" y="1072">B4</text>
+  <text class="label" x="1515" y="1110">Catch and trajectory logic</text>
+  <text class="small" x="1515" y="1142">run catch FSM and joint trajectory update</text>
+
+  <rect class="process" x="1480" y="1195" width="420" height="120"/>
+  <text class="ref" x="1515" y="1232">B5</text>
+  <text class="label" x="1515" y="1270">Hold or abort</text>
+  <text class="small" x="1515" y="1302">stop, retract, or wait for better data</text>
+
+  <rect class="process" x="2050" y="1035" width="380" height="120"/>
+  <text class="ref" x="2085" y="1072">B6</text>
+  <text class="label" x="2085" y="1110">Arm actuation</text>
+  <text class="small" x="2085" y="1142">drive base, shoulder, elbow, wrist, magnet</text>
+
+  <rect class="process" x="2570" y="1035" width="400" height="120"/>
+  <text class="ref" x="2605" y="1072">B7</text>
+  <text class="label" x="2605" y="1110">Hand command stage</text>
+  <text class="small" x="2605" y="1142">send pose or grasp command to Nano</text>
+
+  <rect class="process" x="3100" y="1035" width="380" height="120"/>
+  <text class="ref" x="3135" y="1072">B8</text>
+  <text class="label" x="3135" y="1110">Nano hand control</text>
+  <text class="small" x="3135" y="1142">parse command and step five servos</text>
+
+  <polygon class="io" points="3000,1325 3470,1325 3510,1455 3040,1455"/>
+  <text class="ref" x="3060" y="1365">B9</text>
+  <text class="label" x="3060" y="1405">Physical result and feedback</text>
+  <text class="small" x="3060" y="1440">capture succeeds, misses, or aborts and reports back</text>
+
+  <polygon class="decision" points="2640,1320 2780,1390 2640,1460 2500,1390"/>
+  <text class="ref" x="2615" y="1360">B10</text>
+  <text class="small" x="2570" y="1398">capture</text>
+  <text class="small" x="2568" y="1426">ready?</text>
+
+  <rect class="term" x="820" y="1490" rx="34" ry="34" width="320" height="84"/>
+  <text class="ref" x="860" y="1522">B11</text>
+  <text class="label" x="860" y="1558">Continue or end run</text>
 
   <!-- bottom arrows -->
-  <line class="line" x1="540" y1="865" x2="650" y2="865" marker-end="url(#arrow)"/>
-  <line class="line" x1="1130" y1="865" x2="1240" y2="865" marker-end="url(#arrow)"/>
-  <line class="line" x1="1670" y1="865" x2="1780" y2="865" marker-end="url(#arrow)"/>
-  <line class="line" x1="2210" y1="865" x2="2320" y2="865" marker-end="url(#arrow)"/>
-  <line class="line" x1="2780" y1="865" x2="2890" y2="865" marker-end="url(#arrow)"/>
+  <line class="line" x1="510" y1="1175" x2="640" y2="1175" marker-end="url(#arrow)"/>
+  <line class="line" x1="1030" y1="1175" x2="1085" y2="1175" marker-end="url(#arrow)"/>
+  <line class="line" x1="1355" y1="1175" x2="1480" y2="1095" marker-end="url(#arrow)"/>
+  <text class="tiny" x="1390" y="1090">yes</text>
+  <line class="line" x1="1220" y1="1250" x2="1220" y2="1255"/>
+  <line class="line" x1="1220" y1="1255" x2="1480" y2="1255" marker-end="url(#arrow)"/>
+  <text class="tiny" x="1235" y="1285">no</text>
 
-  <!-- feedback / cross-links -->
-  <rect class="box" x="520" y="1030" width="660" height="120"/>
-  <text class="ref" x="550" y="1068">B7</text>
-  <text class="label" x="550" y="1112">Telemetry and status feedback</text>
-  <text class="small" x="550" y="1142">arm angles, UWB quality, catch state, and errors flow back to the UI</text>
+  <line class="line" x1="1900" y1="1095" x2="2050" y2="1095" marker-end="url(#arrow)"/>
+  <line class="line" x1="2430" y1="1095" x2="2570" y2="1095" marker-end="url(#arrow)"/>
+  <line class="line" x1="2970" y1="1095" x2="3100" y2="1095" marker-end="url(#arrow)"/>
 
-  <rect class="box" x="1600" y="1030" width="760" height="120"/>
-  <text class="ref" x="1630" y="1068">B8</text>
-  <text class="label" x="1630" y="1112">Closed-loop catch result</text>
-  <text class="small" x="1630" y="1142">the arm moves under the target, the hand shapes the grab, and the system either catches or aborts</text>
+  <line class="line" x1="3290" y1="1155" x2="3290" y2="1325"/>
+  <line class="line" x1="3290" y1="1325" x2="3040" y2="1325" marker-end="url(#arrow)"/>
 
-  <line class="dash" x1="3150" y1="410" x2="3150" y2="770" marker-end="url(#arrow)"/>
-  <line class="dash" x1="3150" y1="770" x2="3360" y2="770"/>
-  <line class="dash" x1="1450" y1="960" x2="1450" y2="1030" marker-end="url(#arrow)"/>
-  <line class="dash" x1="3180" y1="960" x2="3180" y2="1030"/>
-  <line class="dash" x1="3180" y1="1030" x2="2360" y2="1030" marker-end="url(#arrow)"/>
-  <line class="dash" x1="850" y1="1030" x2="850" y2="960"/>
-  <line class="dash" x1="850" y1="1030" x2="330" y2="1030"/>
-  <line class="dash" x1="330" y1="1030" x2="330" y2="960" marker-end="url(#arrow)"/>
+  <line class="line" x1="2430" y1="1095" x2="2430" y2="1390"/>
+  <line class="line" x1="2430" y1="1390" x2="2500" y2="1390" marker-end="url(#arrow)"/>
+  <line class="line" x1="2780" y1="1390" x2="3000" y2="1390" marker-end="url(#arrow)"/>
 
-  <!-- vertical link from target state to control path -->
-  <line class="line" x1="3150" y1="410" x2="3150" y2="680"/>
-  <line class="line" x1="3150" y1="680" x2="890" y2="680"/>
-  <line class="line" x1="890" y1="680" x2="890" y2="770" marker-end="url(#arrow)"/>
+  <line class="dash" x1="3040" y1="1455" x2="980" y2="1455"/>
+  <line class="dash" x1="980" y1="1455" x2="980" y2="1490" marker-end="url(#arrow)"/>
+
+  <line class="dash" x1="980" y1="1490" x2="980" y2="1320"/>
+  <line class="dash" x1="980" y1="1320" x2="330" y2="1320"/>
+  <line class="dash" x1="330" y1="1320" x2="330" y2="1240" marker-end="url(#arrow)"/>
+
+  <!-- cross-link from target-state pipeline to control -->
+  <line class="line" x1="3390" y1="560" x2="3390" y2="980"/>
+  <line class="line" x1="3390" y1="980" x2="835" y2="980"/>
+  <line class="line" x1="835" y1="980" x2="835" y2="1110" marker-end="url(#arrow)"/>
 </svg>
