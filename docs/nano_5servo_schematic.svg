@@ -1,108 +1,152 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1400" viewBox="0 0 2400 1400">
   <defs>
     <style>
       .bg { fill: #ffffff; }
-      .box { fill: #ffffff; stroke: #000000; stroke-width: 3; }
-      .wire { fill: none; stroke: #000000; stroke-width: 3; }
-      .thin { fill: none; stroke: #000000; stroke-width: 2; }
-      .title { font-family: Arial, Helvetica, sans-serif; font-size: 32px; font-weight: 700; fill: #000000; }
-      .label { font-family: Arial, Helvetica, sans-serif; font-size: 22px; fill: #000000; }
-      .small { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #000000; }
-      .ref { font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: 700; fill: #000000; }
+      .line { fill: none; stroke: #000000; stroke-width: 4; }
+      .thin { fill: none; stroke: #000000; stroke-width: 2.5; }
+      .box { fill: #ffffff; stroke: #000000; stroke-width: 4; }
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 42px; font-weight: 700; fill: #000000; }
+      .ref { font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: 700; fill: #000000; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 30px; fill: #000000; }
+      .pin { font-family: Arial, Helvetica, sans-serif; font-size: 24px; fill: #000000; }
+      .net { font-family: Arial, Helvetica, sans-serif; font-size: 28px; font-weight: 700; fill: #000000; }
     </style>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="1600" height="1000"/>
-  <text class="title" x="60" y="60">Arduino Nano + 5 Servo Hand Schematic</text>
+  <rect class="bg" x="0" y="0" width="2400" height="1400"/>
+  <text class="title" x="70" y="70">Arduino Nano + 5 Servo Hand Controller Schematic</text>
 
-  <rect class="box" x="80" y="140" width="220" height="120"/>
-  <text class="ref" x="105" y="175">J1</text>
-  <text class="label" x="105" y="212">5V Servo Supply</text>
-  <text class="small" x="105" y="242">External regulated supply</text>
+  <!-- Servo PSU -->
+  <rect class="box" x="90" y="180" width="340" height="160"/>
+  <text class="ref" x="120" y="225">J1</text>
+  <text class="label" x="120" y="280">SERVO POWER INPUT</text>
+  <text class="pin" x="120" y="315">1  +5V_SERVO</text>
+  <text class="pin" x="120" y="345">2  GND</text>
 
-  <rect class="box" x="80" y="520" width="220" height="120"/>
-  <text class="ref" x="105" y="555">U1</text>
-  <text class="label" x="105" y="592">Arduino Nano</text>
+  <!-- USB / logic feed -->
+  <rect class="box" x="90" y="950" width="340" height="140"/>
+  <text class="ref" x="120" y="995">J7</text>
+  <text class="label" x="120" y="1045">NANO POWER / USB</text>
+  <text class="pin" x="120" y="1080">5V and GND to Nano only</text>
 
-  <rect class="box" x="560" y="120" width="260" height="90"/>
-  <text class="ref" x="585" y="150">J2</text>
-  <text class="label" x="585" y="182">Servo 1</text>
-  <text class="small" x="700" y="148">SIG</text>
-  <text class="small" x="700" y="172">V+</text>
-  <text class="small" x="700" y="196">GND</text>
+  <!-- Nano -->
+  <rect class="box" x="760" y="650" width="560" height="520"/>
+  <text class="ref" x="795" y="695">U1</text>
+  <text class="label" x="795" y="750">ARDUINO NANO</text>
 
-  <rect class="box" x="560" y="250" width="260" height="90"/>
-  <text class="ref" x="585" y="280">J3</text>
-  <text class="label" x="585" y="312">Servo 2</text>
-  <text class="small" x="700" y="278">SIG</text>
-  <text class="small" x="700" y="302">V+</text>
-  <text class="small" x="700" y="326">GND</text>
+  <text class="pin" x="820" y="850">5V</text>
+  <text class="pin" x="820" y="915">GND</text>
+  <text class="pin" x="820" y="980">D2</text>
+  <text class="pin" x="820" y="1045">D3</text>
+  <text class="pin" x="820" y="1110">D4</text>
+  <text class="pin" x="820" y="1175">D5</text>
+  <text class="pin" x="820" y="1240">D6</text>
 
-  <rect class="box" x="560" y="380" width="260" height="90"/>
-  <text class="ref" x="585" y="410">J4</text>
-  <text class="label" x="585" y="442">Servo 3</text>
-  <text class="small" x="700" y="408">SIG</text>
-  <text class="small" x="700" y="432">V+</text>
-  <text class="small" x="700" y="456">GND</text>
+  <!-- rails -->
+  <line class="line" x1="430" y1="250" x2="2220" y2="250"/>
+  <text class="net" x="470" y="235">+5V_SERVO</text>
 
-  <rect class="box" x="560" y="510" width="260" height="90"/>
-  <text class="ref" x="585" y="540">J5</text>
-  <text class="label" x="585" y="572">Servo 4</text>
-  <text class="small" x="700" y="538">SIG</text>
-  <text class="small" x="700" y="562">V+</text>
-  <text class="small" x="700" y="586">GND</text>
+  <line class="line" x1="430" y1="320" x2="2140" y2="320"/>
+  <text class="net" x="470" y="305">GND</text>
 
-  <rect class="box" x="560" y="640" width="260" height="90"/>
-  <text class="ref" x="585" y="670">J6</text>
-  <text class="label" x="585" y="702">Servo 5</text>
-  <text class="small" x="700" y="668">SIG</text>
-  <text class="small" x="700" y="692">V+</text>
-  <text class="small" x="700" y="716">GND</text>
+  <!-- bulk cap -->
+  <text class="ref" x="520" y="420">C1</text>
+  <line class="thin" x1="560" y1="360" x2="560" y2="460"/>
+  <line class="thin" x1="590" y1="360" x2="590" y2="460"/>
+  <line class="line" x1="560" y1="360" x2="560" y2="250"/>
+  <line class="line" x1="590" y1="460" x2="590" y2="520"/>
+  <line class="line" x1="565" y1="520" x2="615" y2="520"/>
+  <line class="line" x1="572" y1="533" x2="608" y2="533"/>
+  <line class="line" x1="579" y1="546" x2="601" y2="546"/>
+  <text class="label" x="630" y="420">2200uF</text>
 
-  <text class="label" x="350" y="178">+5V</text>
-  <line class="wire" x1="300" y1="180" x2="500" y2="180"/>
-  <line class="wire" x1="500" y1="180" x2="500" y2="690"/>
-  <line class="wire" x1="500" y1="165" x2="560" y2="165"/>
-  <line class="wire" x1="500" y1="295" x2="560" y2="295"/>
-  <line class="wire" x1="500" y1="425" x2="560" y2="425"/>
-  <line class="wire" x1="500" y1="555" x2="560" y2="555"/>
-  <line class="wire" x1="500" y1="685" x2="560" y2="685"/>
+  <!-- Nano power -->
+  <line class="line" x1="430" y1="1000" x2="630" y2="1000"/>
+  <line class="line" x1="630" y1="1000" x2="630" y2="850"/>
+  <line class="line" x1="630" y1="850" x2="760" y2="850"/>
+  <text class="net" x="455" y="988">+5V_LOGIC</text>
 
-  <text class="label" x="350" y="238">GND</text>
-  <line class="wire" x1="300" y1="230" x2="460" y2="230"/>
-  <line class="wire" x1="460" y1="230" x2="460" y2="715"/>
-  <line class="wire" x1="460" y1="190" x2="560" y2="190"/>
-  <line class="wire" x1="460" y1="320" x2="560" y2="320"/>
-  <line class="wire" x1="460" y1="450" x2="560" y2="450"/>
-  <line class="wire" x1="460" y1="580" x2="560" y2="580"/>
-  <line class="wire" x1="460" y1="710" x2="560" y2="710"/>
+  <line class="line" x1="430" y1="1050" x2="680" y2="1050"/>
+  <line class="line" x1="680" y1="1050" x2="680" y2="915"/>
+  <line class="line" x1="680" y1="915" x2="760" y2="915"/>
 
-  <line class="wire" x1="300" y1="570" x2="420" y2="570"/>
-  <text class="small" x="160" y="565">GND</text>
-  <line class="wire" x1="420" y1="570" x2="420" y2="230"/>
-  <line class="wire" x1="300" y1="540" x2="380" y2="540"/>
-  <text class="small" x="160" y="535">5V</text>
+  <!-- Servo connectors -->
+  <g transform="translate(1550,160)">
+    <rect class="box" x="0" y="0" width="360" height="120"/>
+    <text class="ref" x="25" y="38">J2</text>
+    <text class="label" x="25" y="84">SERVO 1</text>
+    <text class="pin" x="240" y="40">1 SIG</text>
+    <text class="pin" x="240" y="72">2 V+</text>
+    <text class="pin" x="240" y="104">3 GND</text>
+  </g>
+  <g transform="translate(1550,340)">
+    <rect class="box" x="0" y="0" width="360" height="120"/>
+    <text class="ref" x="25" y="38">J3</text>
+    <text class="label" x="25" y="84">SERVO 2</text>
+    <text class="pin" x="240" y="40">1 SIG</text>
+    <text class="pin" x="240" y="72">2 V+</text>
+    <text class="pin" x="240" y="104">3 GND</text>
+  </g>
+  <g transform="translate(1550,520)">
+    <rect class="box" x="0" y="0" width="360" height="120"/>
+    <text class="ref" x="25" y="38">J4</text>
+    <text class="label" x="25" y="84">SERVO 3</text>
+    <text class="pin" x="240" y="40">1 SIG</text>
+    <text class="pin" x="240" y="72">2 V+</text>
+    <text class="pin" x="240" y="104">3 GND</text>
+  </g>
+  <g transform="translate(1550,700)">
+    <rect class="box" x="0" y="0" width="360" height="120"/>
+    <text class="ref" x="25" y="38">J5</text>
+    <text class="label" x="25" y="84">SERVO 4</text>
+    <text class="pin" x="240" y="40">1 SIG</text>
+    <text class="pin" x="240" y="72">2 V+</text>
+    <text class="pin" x="240" y="104">3 GND</text>
+  </g>
+  <g transform="translate(1550,880)">
+    <rect class="box" x="0" y="0" width="360" height="120"/>
+    <text class="ref" x="25" y="38">J6</text>
+    <text class="label" x="25" y="84">SERVO 5</text>
+    <text class="pin" x="240" y="40">1 SIG</text>
+    <text class="pin" x="240" y="72">2 V+</text>
+    <text class="pin" x="240" y="104">3 GND</text>
+  </g>
 
-  <line class="wire" x1="300" y1="595" x2="560" y2="145"/>
-  <text class="small" x="200" y="620">D2</text>
-  <line class="wire" x1="300" y1="625" x2="560" y2="275"/>
-  <text class="small" x="200" y="650">D3</text>
-  <line class="wire" x1="300" y1="655" x2="560" y2="405"/>
-  <text class="small" x="200" y="680">D4</text>
-  <line class="wire" x1="300" y1="685" x2="560" y2="535"/>
-  <text class="small" x="200" y="710">D5</text>
-  <line class="wire" x1="300" y1="715" x2="560" y2="665"/>
-  <text class="small" x="200" y="740">D6</text>
+  <!-- power branches -->
+  <line class="line" x1="1910" y1="232" x2="2220" y2="232"/>
+  <line class="line" x1="1910" y1="412" x2="2220" y2="412"/>
+  <line class="line" x1="1910" y1="592" x2="2220" y2="592"/>
+  <line class="line" x1="1910" y1="772" x2="2220" y2="772"/>
+  <line class="line" x1="1910" y1="952" x2="2220" y2="952"/>
+  <line class="line" x1="2220" y1="232" x2="2220" y2="250"/>
+  <line class="line" x1="2220" y1="250" x2="2220" y2="952"/>
 
-  <text class="small" x="325" y="538">USB or regulated 5V</text>
+  <line class="line" x1="1910" y1="264" x2="2140" y2="264"/>
+  <line class="line" x1="2140" y1="264" x2="2140" y2="320"/>
+  <line class="line" x1="1910" y1="444" x2="2140" y2="444"/>
+  <line class="line" x1="1910" y1="624" x2="2140" y2="624"/>
+  <line class="line" x1="1910" y1="804" x2="2140" y2="804"/>
+  <line class="line" x1="1910" y1="984" x2="2140" y2="984"/>
+  <line class="line" x1="2140" y1="320" x2="2140" y2="984"/>
 
-  <text class="ref" x="910" y="150">C1</text>
-  <line class="thin" x1="940" y1="120" x2="940" y2="210"/>
-  <line class="thin" x1="965" y1="120" x2="965" y2="210"/>
-  <line class="wire" x1="500" y1="180" x2="940" y2="180"/>
-  <line class="wire" x1="965" y1="180" x2="965" y2="250"/>
-  <line class="wire" x1="945" y1="250" x2="985" y2="250"/>
-  <line class="wire" x1="950" y1="260" x2="980" y2="260"/>
-  <line class="wire" x1="955" y1="270" x2="975" y2="270"/>
-  <text class="label" x="995" y="182">2200uF</text>
+  <!-- signal lines -->
+  <line class="line" x1="1320" y1="980" x2="1450" y2="980"/>
+  <line class="line" x1="1450" y1="980" x2="1450" y2="200"/>
+  <line class="line" x1="1450" y1="200" x2="1550" y2="200"/>
+
+  <line class="line" x1="1320" y1="1045" x2="1430" y2="1045"/>
+  <line class="line" x1="1430" y1="1045" x2="1430" y2="380"/>
+  <line class="line" x1="1430" y1="380" x2="1550" y2="380"/>
+
+  <line class="line" x1="1320" y1="1110" x2="1410" y2="1110"/>
+  <line class="line" x1="1410" y1="1110" x2="1410" y2="560"/>
+  <line class="line" x1="1410" y1="560" x2="1550" y2="560"/>
+
+  <line class="line" x1="1320" y1="1175" x2="1390" y2="1175"/>
+  <line class="line" x1="1390" y1="1175" x2="1390" y2="740"/>
+  <line class="line" x1="1390" y1="740" x2="1550" y2="740"/>
+
+  <line class="line" x1="1320" y1="1240" x2="1370" y2="1240"/>
+  <line class="line" x1="1370" y1="1240" x2="1370" y2="920"/>
+  <line class="line" x1="1370" y1="920" x2="1550" y2="920"/>
 </svg>
