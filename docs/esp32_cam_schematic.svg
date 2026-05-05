@@ -2,101 +2,103 @@
   <defs>
     <style>
       .bg { fill: #ffffff; }
-      .line { fill: none; stroke: #000000; stroke-width: 4; }
-      .thin { fill: none; stroke: #000000; stroke-width: 2.5; }
       .box { fill: #ffffff; stroke: #000000; stroke-width: 4; }
-      .title { font-family: Arial, Helvetica, sans-serif; font-size: 42px; font-weight: 700; fill: #000000; }
-      .ref { font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: 700; fill: #000000; }
-      .label { font-family: Arial, Helvetica, sans-serif; font-size: 30px; fill: #000000; }
-      .pin { font-family: Arial, Helvetica, sans-serif; font-size: 24px; fill: #000000; }
-      .net { font-family: Arial, Helvetica, sans-serif; font-size: 28px; font-weight: 700; fill: #000000; }
+      .wire { fill: none; stroke: #000000; stroke-width: 4; }
+      .thin { fill: none; stroke: #000000; stroke-width: 3; }
+      .dot { fill: #000000; }
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 40px; font-weight: 700; fill: #000000; }
+      .ref { font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: 700; fill: #000000; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 28px; fill: #000000; }
+      .pin { font-family: Arial, Helvetica, sans-serif; font-size: 22px; fill: #000000; }
+      .net { font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: 700; fill: #000000; }
     </style>
   </defs>
 
   <rect class="bg" x="0" y="0" width="2400" height="1400"/>
   <text class="title" x="70" y="70">ESP32-CAM Standalone Schematic</text>
 
-  <!-- 5V input -->
-  <rect class="box" x="100" y="200" width="360" height="150"/>
-  <text class="ref" x="130" y="245">J1</text>
-  <text class="label" x="130" y="300">5V POWER INPUT</text>
-  <text class="pin" x="130" y="335">1  +5V</text>
-  <text class="pin" x="130" y="365">2  GND</text>
+  <!-- 5V power input -->
+  <rect class="box" x="90" y="170" width="420" height="210"/>
+  <text class="ref" x="125" y="210">J1</text>
+  <text class="label" x="125" y="255">5V POWER INPUT</text>
+  <text class="pin" x="125" y="305">Pin 1  +5V</text>
+  <text class="pin" x="125" y="345">Pin 2  GND</text>
 
-  <!-- USB UART -->
-  <rect class="box" x="100" y="760" width="420" height="230"/>
-  <text class="ref" x="130" y="805">J2</text>
-  <text class="label" x="130" y="860">USB-UART ADAPTER</text>
-  <text class="pin" x="130" y="900">1  TXD   (3.3V logic)</text>
-  <text class="pin" x="130" y="935">2  RXD   (3.3V logic)</text>
-  <text class="pin" x="130" y="970">3  GND</text>
+  <!-- USB-UART -->
+  <rect class="box" x="90" y="760" width="520" height="260"/>
+  <text class="ref" x="125" y="800">J2</text>
+  <text class="label" x="125" y="845">USB-UART ADAPTER</text>
+  <text class="pin" x="125" y="900">Pin 1  TXD   (3.3V logic)</text>
+  <text class="pin" x="125" y="940">Pin 2  RXD   (3.3V logic)</text>
+  <text class="pin" x="125" y="980">Pin 3  GND</text>
 
   <!-- ESP32-CAM -->
-  <rect class="box" x="1180" y="180" width="600" height="760"/>
-  <text class="ref" x="1215" y="225">U1</text>
-  <text class="label" x="1215" y="285">AI-THINKER ESP32-CAM</text>
+  <rect class="box" x="1230" y="150" width="720" height="860"/>
+  <text class="ref" x="1270" y="195">U1</text>
+  <text class="label" x="1270" y="245">AI-THINKER ESP32-CAM</text>
 
-  <text class="pin" x="1240" y="390">5V</text>
-  <text class="pin" x="1240" y="470">GND</text>
-  <text class="pin" x="1240" y="550">U0R / RX0</text>
-  <text class="pin" x="1240" y="630">U0T / TX0</text>
-  <text class="pin" x="1240" y="710">GPIO0</text>
-  <text class="pin" x="1240" y="790">EN</text>
+  <text class="pin" x="1300" y="360">5V</text>
+  <text class="pin" x="1300" y="430">GND</text>
+  <text class="pin" x="1300" y="520">U0R / RX0</text>
+  <text class="pin" x="1300" y="610">U0T / TX0</text>
+  <text class="pin" x="1300" y="700">GPIO0</text>
+  <text class="pin" x="1300" y="790">EN</text>
 
-  <!-- power rails -->
-  <line class="line" x1="460" y1="265" x2="1030" y2="265"/>
-  <line class="line" x1="1030" y1="265" x2="1030" y2="390"/>
-  <line class="line" x1="1030" y1="390" x2="1180" y2="390"/>
-  <text class="net" x="520" y="250">+5V</text>
+  <!-- Power rails -->
+  <line class="wire" x1="510" y1="300" x2="1080" y2="300"/>
+  <line class="wire" x1="1080" y1="300" x2="1080" y2="360"/>
+  <line class="wire" x1="1080" y1="360" x2="1230" y2="360"/>
+  <text class="net" x="560" y="282">+5V</text>
 
-  <line class="line" x1="460" y1="335" x2="980" y2="335"/>
-  <line class="line" x1="980" y1="335" x2="980" y2="470"/>
-  <line class="line" x1="980" y1="470" x2="1180" y2="470"/>
-  <text class="net" x="520" y="320">GND</text>
+  <line class="wire" x1="510" y1="340" x2="1030" y2="340"/>
+  <line class="wire" x1="1030" y1="340" x2="1030" y2="430"/>
+  <line class="wire" x1="1030" y1="430" x2="1230" y2="430"/>
+  <text class="net" x="560" y="372">GND</text>
 
-  <!-- bulk cap -->
-  <text class="ref" x="630" y="510">C1</text>
-  <line class="thin" x1="680" y1="430" x2="680" y2="550"/>
-  <line class="thin" x1="710" y1="430" x2="710" y2="550"/>
-  <line class="line" x1="680" y1="430" x2="680" y2="265"/>
-  <line class="line" x1="710" y1="550" x2="710" y2="610"/>
-  <line class="line" x1="685" y1="610" x2="735" y2="610"/>
-  <line class="line" x1="692" y1="623" x2="728" y2="623"/>
-  <line class="line" x1="699" y1="636" x2="721" y2="636"/>
-  <text class="label" x="760" y="505">470uF</text>
+  <!-- Local bulk cap -->
+  <text class="ref" x="650" y="530">C1</text>
+  <line class="thin" x1="705" y1="440" x2="705" y2="555"/>
+  <line class="thin" x1="740" y1="440" x2="740" y2="555"/>
+  <line class="wire" x1="705" y1="440" x2="705" y2="300"/>
+  <line class="wire" x1="740" y1="555" x2="740" y2="625"/>
+  <line class="wire" x1="715" y1="625" x2="765" y2="625"/>
+  <line class="wire" x1="722" y1="638" x2="758" y2="638"/>
+  <line class="wire" x1="729" y1="651" x2="751" y2="651"/>
+  <text class="label" x="795" y="530">470uF</text>
 
-  <!-- UART -->
-  <line class="line" x1="520" y1="885" x2="1080" y2="885"/>
-  <line class="line" x1="1080" y1="885" x2="1080" y2="550"/>
-  <line class="line" x1="1080" y1="550" x2="1180" y2="550"/>
+  <!-- USB-UART to ESP32-CAM -->
+  <line class="wire" x1="610" y1="890" x2="1120" y2="890"/>
+  <line class="wire" x1="1120" y1="890" x2="1120" y2="520"/>
+  <line class="wire" x1="1120" y1="520" x2="1230" y2="520"/>
 
-  <line class="line" x1="520" y1="920" x2="1130" y2="920"/>
-  <line class="line" x1="1130" y1="920" x2="1130" y2="630"/>
-  <line class="line" x1="1130" y1="630" x2="1180" y2="630"/>
+  <line class="wire" x1="610" y1="930" x2="1160" y2="930"/>
+  <line class="wire" x1="1160" y1="930" x2="1160" y2="610"/>
+  <line class="wire" x1="1160" y1="610" x2="1230" y2="610"/>
 
-  <line class="line" x1="520" y1="955" x2="930" y2="955"/>
-  <line class="line" x1="930" y1="955" x2="930" y2="470"/>
-  <line class="line" x1="930" y1="470" x2="980" y2="470"/>
+  <line class="wire" x1="610" y1="970" x2="990" y2="970"/>
+  <line class="wire" x1="990" y1="970" x2="990" y2="430"/>
+  <line class="wire" x1="990" y1="430" x2="1030" y2="430"/>
+  <circle class="dot" cx="1030" cy="430" r="6"/>
 
-  <!-- boot jumper -->
-  <rect class="box" x="1870" y="660" width="220" height="90"/>
-  <text class="ref" x="1900" y="700">JP1</text>
-  <text class="label" x="1900" y="732">BOOT</text>
-  <line class="line" x1="1780" y1="710" x2="1870" y2="710"/>
-  <line class="line" x1="2090" y1="710" x2="2200" y2="710"/>
-  <line class="line" x1="2200" y1="710" x2="2200" y2="840"/>
-  <line class="line" x1="2175" y1="840" x2="2225" y2="840"/>
-  <line class="line" x1="2182" y1="853" x2="2218" y2="853"/>
-  <line class="line" x1="2189" y1="866" x2="2211" y2="866"/>
+  <!-- Boot jumper -->
+  <rect class="box" x="2030" y="660" width="220" height="100"/>
+  <text class="ref" x="2065" y="700">JP1</text>
+  <text class="label" x="2065" y="742">BOOT</text>
+  <line class="wire" x1="1950" y1="700" x2="2030" y2="700"/>
+  <line class="wire" x1="2250" y1="710" x2="2310" y2="710"/>
+  <line class="wire" x1="2310" y1="710" x2="2310" y2="860"/>
+  <line class="wire" x1="2285" y1="860" x2="2335" y2="860"/>
+  <line class="wire" x1="2292" y1="873" x2="2328" y2="873"/>
+  <line class="wire" x1="2299" y1="886" x2="2321" y2="886"/>
 
-  <!-- reset switch -->
-  <rect class="box" x="1870" y="780" width="220" height="90"/>
-  <text class="ref" x="1900" y="820">SW1</text>
-  <text class="label" x="1900" y="852">RESET</text>
-  <line class="line" x1="1780" y1="790" x2="1870" y2="790"/>
-  <line class="line" x1="2090" y1="825" x2="2260" y2="825"/>
-  <line class="line" x1="2260" y1="825" x2="2260" y2="980"/>
-  <line class="line" x1="2235" y1="980" x2="2285" y2="980"/>
-  <line class="line" x1="2242" y1="993" x2="2278" y2="993"/>
-  <line class="line" x1="2249" y1="1006" x2="2271" y2="1006"/>
+  <!-- Reset switch -->
+  <rect class="box" x="2030" y="800" width="220" height="100"/>
+  <text class="ref" x="2065" y="840">SW1</text>
+  <text class="label" x="2065" y="882">RESET</text>
+  <line class="wire" x1="1950" y1="790" x2="2030" y2="790"/>
+  <line class="wire" x1="2250" y1="850" x2="2350" y2="850"/>
+  <line class="wire" x1="2350" y1="850" x2="2350" y2="1030"/>
+  <line class="wire" x1="2325" y1="1030" x2="2375" y2="1030"/>
+  <line class="wire" x1="2332" y1="1043" x2="2368" y2="1043"/>
+  <line class="wire" x1="2339" y1="1056" x2="2361" y2="1056"/>
 </svg>
