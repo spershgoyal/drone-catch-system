@@ -10,6 +10,10 @@ constexpr uint32_t MOTION_UPDATE_MS = 20;
 constexpr float DEFAULT_SPEED_DEG_S = 60.0f;
 constexpr size_t LINE_BUFFER_SIZE = 128;
 constexpr float DEFAULT_TEST_SPEED_DEG_S = 45.0f;
+constexpr float DEFAULT_PULSE_CONTRACT_DEG = 10.0f;
+constexpr float DEFAULT_PULSE_SPLAY_DEG = 145.0f;
+constexpr uint32_t DEFAULT_PULSE_HOLD_MS = 5000;
+constexpr float DEFAULT_PULSE_SPEED_DEG_S = 90.0f;
 
 struct ServoChannelConfig {
   const char* name;
@@ -32,6 +36,23 @@ struct ServoChannelState {
   bool attached;
 };
 
+enum PulsePhase {
+  PULSE_MOVING_TO_CONTRACT,
+  PULSE_HOLDING_CONTRACT,
+  PULSE_MOVING_TO_SPLAY,
+  PULSE_HOLDING_SPLAY,
+};
+
+struct PulseModeState {
+  bool enabled;
+  float contract_deg;
+  float splay_deg;
+  uint32_t hold_ms;
+  float speed_deg_s;
+  PulsePhase phase;
+  uint32_t phase_started_ms;
+};
+
 ServoChannelConfig kChannels[SERVO_COUNT] = {
   { "thumb", 3,  500, 2500, 40.0f, 20.0f, 120.0f,  0.0f, 140.0f, 0.0f, false },
   { "index", 5,  500, 2500, 30.0f, 10.0f, 135.0f,  0.0f, 150.0f, 0.0f, false },
@@ -42,6 +63,7 @@ ServoChannelConfig kChannels[SERVO_COUNT] = {
 
 Servo kDrivers[SERVO_COUNT];
 ServoChannelState kState[SERVO_COUNT];
+PulseModeState kPulseMode;
 char kLineBuffer[LINE_BUFFER_SIZE];
 size_t kLineLength = 0;
 uint32_t kLastMotionUpdateMs = 0;
@@ -214,8 +236,34 @@ void stopMotion() {
   Serial.println("ok stop");
 }
 
+void freezeMotion() {
+  for (size_t index = 0; index < SERVO_COUNT; index++) {
+    kState[index].target_deg = kState[index].current_deg;
+  }
+}
+
+void disablePulseMode() {
+  kPulseMode.enabled = false;
+}
+
+void startPulseMove(PulsePhase phase) {
+  float target_deg = phase == PULSE_MOVING_TO_CONTRACT
+    ? kPulseMode.contract_deg
+    : kPulseMode.splay_deg;
+  for (size_t index = 0; index < SERVO_COUNT; index++) {
+    setTarget(index, target_deg, kPulseMode.speed_deg_s);
+  }
+  kPulseMode.phase = phase;
+  kPulseMode.phase_started_ms = millis();
+}
+
+void enablePulseMode() {
+  kPulseMode.enabled = true;
+  startPulseMove(PULSE_MOVING_TO_CONTRACT);
+}
+
 void printHelp() {
-  Serial.println("ok commands ping status map attach detach home stop pose grasp set setall trim test help");
+  Serial.println("ok commands ping status map attach detach home stop pose grasp set setall trim test pulse help");
 }
 
 void printStatus() {
@@ -263,6 +311,34 @@ void printMap() {
   }
 }
 
+void printPulseStatus() {
+  Serial.print("pulse enabled=");
+  Serial.print(kPulseMode.enabled ? 1 : 0);
+  Serial.print(" contract=");
+  Serial.print(kPulseMode.contract_deg, 1);
+  Serial.print(" splay=");
+  Serial.print(kPulseMode.splay_deg, 1);
+  Serial.print(" hold_ms=");
+  Serial.print(kPulseMode.hold_ms);
+  Serial.print(" speed=");
+  Serial.print(kPulseMode.speed_deg_s, 1);
+  Serial.print(" phase=");
+  switch (kPulseMode.phase) {
+    case PULSE_MOVING_TO_CONTRACT:
+      Serial.println("moving_contract");
+      return;
+    case PULSE_HOLDING_CONTRACT:
+      Serial.println("holding_contract");
+      return;
+    case PULSE_MOVING_TO_SPLAY:
+      Serial.println("moving_splay");
+      return;
+    case PULSE_HOLDING_SPLAY:
+      Serial.println("holding_splay");
+      return;
+  }
+}
+
 void updateMotion() {
   uint32_t now = millis();
   if (now - kLastMotionUpdateMs < MOTION_UPDATE_MS) {
@@ -288,6 +364,37 @@ void updateMotion() {
   }
 }
 
+void updatePulseMode() {
+  if (!kPulseMode.enabled) {
+    return;
+  }
+
+  uint32_t now = millis();
+  if (kPulseMode.phase == PULSE_MOVING_TO_CONTRACT && !anyMoving()) {
+    kPulseMode.phase = PULSE_HOLDING_CONTRACT;
+    kPulseMode.phase_started_ms = now;
+    return;
+  }
+  if (kPulseMode.phase == PULSE_MOVING_TO_SPLAY && !anyMoving()) {
+    kPulseMode.phase = PULSE_HOLDING_SPLAY;
+    kPulseMode.phase_started_ms = now;
+    return;
+  }
+  if (
+    kPulseMode.phase == PULSE_HOLDING_CONTRACT &&
+    now - kPulseMode.phase_started_ms >= kPulseMode.hold_ms
+  ) {
+    startPulseMove(PULSE_MOVING_TO_SPLAY);
+    return;
+  }
+  if (
+    kPulseMode.phase == PULSE_HOLDING_SPLAY &&
+    now - kPulseMode.phase_started_ms >= kPulseMode.hold_ms
+  ) {
+    startPulseMove(PULSE_MOVING_TO_CONTRACT);
+  }
+}
+
 void waitForMotion(uint32_t timeout_ms) {
   uint32_t start_ms = millis();
   while (anyMoving() && (millis() - start_ms) < timeout_ms) {
@@ -303,9 +410,17 @@ void initializeState() {
     kState[index].speed_deg_s = DEFAULT_SPEED_DEG_S;
     kState[index].attached = false;
   }
+  kPulseMode.enabled = false;
+  kPulseMode.contract_deg = DEFAULT_PULSE_CONTRACT_DEG;
+  kPulseMode.splay_deg = DEFAULT_PULSE_SPLAY_DEG;
+  kPulseMode.hold_ms = DEFAULT_PULSE_HOLD_MS;
+  kPulseMode.speed_deg_s = DEFAULT_PULSE_SPEED_DEG_S;
+  kPulseMode.phase = PULSE_MOVING_TO_CONTRACT;
+  kPulseMode.phase_started_ms = 0;
 }
 
 void handleSetCommand(char* save_ptr) {
+  disablePulseMode();
   char* servo_name = strtok_r(nullptr, " ", &save_ptr);
   char* angle_text = strtok_r(nullptr, " ", &save_ptr);
   char* speed_text = strtok_r(nullptr, " ", &save_ptr);
@@ -332,6 +447,7 @@ void handleSetCommand(char* save_ptr) {
 }
 
 void handleSetAllCommand(char* save_ptr) {
+  disablePulseMode();
   float values[SERVO_COUNT];
   for (size_t index = 0; index < SERVO_COUNT; index++) {
     char* token = strtok_r(nullptr, " ", &save_ptr);
@@ -371,6 +487,7 @@ void handleTrimCommand(char* save_ptr) {
 }
 
 void handleTestCommand(char* save_ptr) {
+  disablePulseMode();
   char* servo_name = strtok_r(nullptr, " ", &save_ptr);
   if (servo_name == nullptr) {
     Serial.println("err usage test <servo|all>");
@@ -404,6 +521,53 @@ void handleTestCommand(char* save_ptr) {
   waitForMotion(3000);
   Serial.print("ok test ");
   Serial.println(kChannels[index].name);
+}
+
+void handlePulseCommand(char* save_ptr) {
+  char* subcommand = strtok_r(nullptr, " ", &save_ptr);
+  if (subcommand == nullptr || strcmp(subcommand, "status") == 0) {
+    printPulseStatus();
+    return;
+  }
+
+  if (strcmp(subcommand, "on") == 0) {
+    enablePulseMode();
+    Serial.println("ok pulse on");
+    return;
+  }
+
+  if (strcmp(subcommand, "off") == 0) {
+    disablePulseMode();
+    freezeMotion();
+    Serial.println("ok pulse off");
+    return;
+  }
+
+  if (strcmp(subcommand, "set") == 0) {
+    char* contract_text = strtok_r(nullptr, " ", &save_ptr);
+    char* splay_text = strtok_r(nullptr, " ", &save_ptr);
+    char* hold_text = strtok_r(nullptr, " ", &save_ptr);
+    char* speed_text = strtok_r(nullptr, " ", &save_ptr);
+    if (contract_text == nullptr || splay_text == nullptr) {
+      Serial.println("err usage pulse set <contract_deg> <splay_deg> [hold_ms] [speed_deg_s]");
+      return;
+    }
+    kPulseMode.contract_deg = static_cast<float>(atof(contract_text));
+    kPulseMode.splay_deg = static_cast<float>(atof(splay_text));
+    if (hold_text != nullptr) {
+      kPulseMode.hold_ms = static_cast<uint32_t>(atol(hold_text));
+    }
+    if (speed_text != nullptr) {
+      kPulseMode.speed_deg_s = clampf(static_cast<float>(atof(speed_text)), 1.0f, 360.0f);
+    }
+    if (kPulseMode.enabled) {
+      startPulseMove(PULSE_MOVING_TO_CONTRACT);
+    }
+    printPulseStatus();
+    return;
+  }
+
+  Serial.println("err usage pulse <on|off|status|set>");
 }
 
 void handleLine(char* line) {
@@ -441,14 +605,17 @@ void handleLine(char* line) {
     return;
   }
   if (strcmp(command, "home") == 0) {
+    disablePulseMode();
     applyPose("home");
     return;
   }
   if (strcmp(command, "stop") == 0) {
+    disablePulseMode();
     stopMotion();
     return;
   }
   if (strcmp(command, "pose") == 0) {
+    disablePulseMode();
     char* pose_name = strtok_r(nullptr, " ", &save_ptr);
     if (pose_name == nullptr) {
       Serial.println("err usage pose <open|pregrasp|close|home>");
@@ -458,6 +625,7 @@ void handleLine(char* line) {
     return;
   }
   if (strcmp(command, "grasp") == 0) {
+    disablePulseMode();
     char* amount_text = strtok_r(nullptr, " ", &save_ptr);
     if (amount_text == nullptr) {
       Serial.println("err usage grasp <0.0..1.0>");
@@ -480,6 +648,10 @@ void handleLine(char* line) {
   }
   if (strcmp(command, "test") == 0) {
     handleTestCommand(save_ptr);
+    return;
+  }
+  if (strcmp(command, "pulse") == 0) {
+    handlePulseCommand(save_ptr);
     return;
   }
 
@@ -514,13 +686,16 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
   initializeState();
   attachAll();
+  enablePulseMode();
   Serial.println("ready hand-servo-controller");
   Serial.println("wiring signal pins: thumb=3 index=5 middle=6 ring=9 pinky=10");
   Serial.println("use external 5V/6V servo power and common ground");
+  Serial.println("default pulse: contract=10.0 deg, splay=145.0 deg, hold=5000 ms");
   printHelp();
 }
 
 void loop() {
   readSerialLines();
   updateMotion();
+  updatePulseMode();
 }

@@ -128,6 +128,29 @@ test thumb
 test all
 ```
 
+### `pulse <on|off|status>`
+
+Controls the built-in repetitive bench pulse mode.
+
+Examples:
+
+```text
+pulse status
+pulse off
+pulse on
+```
+
+### `pulse set <contract_deg> <splay_deg> [hold_ms] [speed_deg_s]`
+
+Updates the repetitive pulse mode settings. When pulse mode is already on, the
+new settings take effect immediately and restart at the contract position.
+
+Example:
+
+```text
+pulse set 10 145 5000 90
+```
+
 ## Servo Names
 
 The starter firmware accepts:
@@ -146,7 +169,9 @@ attach
 map
 status
 test thumb
-pose pregrasp
-grasp 0.45
-grasp 1.00
+pulse status
+pulse set 10 145 5000 90
+pulse off
+test all
+pulse on
 ```

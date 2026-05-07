@@ -82,6 +82,10 @@ The Arduino firmware accepts line-based commands over USB serial:
 - `setall 90 90 90 90 90`
 - `test thumb`
 - `test all`
+- `pulse status`
+- `pulse on`
+- `pulse off`
+- `pulse set 10 145 5000 90`
 - `stop`
 
 Full details are in [protocol.md](/Users/spershgoyal/Documents/Playground/drone-catch-system/hand/servo_controller/protocol.md:1).
@@ -90,22 +94,43 @@ Full details are in [protocol.md](/Users/spershgoyal/Documents/Playground/drone-
 
 1. Open [hand_servo_controller.ino](/Users/spershgoyal/Documents/Playground/drone-catch-system/hand/servo_controller/arduino_firmware/hand_servo_controller.ino:1) in Arduino IDE.
 2. Select your board and serial port.
-3. Upload the sketch.
-4. Open Serial Monitor.
-5. Set line ending to `Newline`.
-6. Set baud to `115200`.
-7. Try:
+3. Set `Tools > Board > Arduino AVR Boards > Arduino Uno`.
+4. Select the correct `Tools > Port`.
+5. Upload the sketch.
+6. Open Serial Monitor.
+7. Set line ending to `Newline`.
+8. Set baud to `115200`.
+9. After boot, the hand will automatically start pulsing:
+   - `contract` at `10 deg`
+   - wait `5 seconds`
+   - `splay` at `145 deg`
+   - wait `5 seconds`
+   - repeat
+10. Try:
 
 ```text
 ping
 map
 status
-pose open
+pulse status
+pulse set 10 145 5000 90
+pulse off
 test thumb
-pose pregrasp
-grasp 0.50
-grasp 1.00
+pulse on
 ```
+
+If you want a different splay angle, the fastest bench command is:
+
+```text
+pulse set 10 135 5000 90
+```
+
+That means:
+
+- contract to `10 deg`
+- splay to `135 deg`
+- hold each position for `5000 ms`
+- move at `90 deg/s`
 
 ## Integration Hook
 
