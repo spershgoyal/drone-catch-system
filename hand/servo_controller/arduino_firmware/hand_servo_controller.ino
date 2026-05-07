@@ -177,21 +177,21 @@ void applyPose(const char* pose_name) {
     for (size_t index = 0; index < SERVO_COUNT; index++) {
       setTarget(index, kChannels[index].home_deg);
     }
-    Serial.println("ok pose home");
+    Serial.println(F("ok pose home"));
     return;
   }
   if (strcmp(pose_name, "open") == 0) {
     for (size_t index = 0; index < SERVO_COUNT; index++) {
       setTarget(index, kChannels[index].open_deg);
     }
-    Serial.println("ok pose open");
+    Serial.println(F("ok pose open"));
     return;
   }
   if (strcmp(pose_name, "close") == 0) {
     for (size_t index = 0; index < SERVO_COUNT; index++) {
       setTarget(index, kChannels[index].closed_deg);
     }
-    Serial.println("ok pose close");
+    Serial.println(F("ok pose close"));
     return;
   }
   if (strcmp(pose_name, "pregrasp") == 0) {
@@ -201,10 +201,10 @@ void applyPose(const char* pose_name) {
         lerpf(kChannels[index].open_deg, kChannels[index].closed_deg, 0.45f)
       );
     }
-    Serial.println("ok pose pregrasp");
+    Serial.println(F("ok pose pregrasp"));
     return;
   }
-  Serial.print("err unknown pose ");
+  Serial.print(F("err unknown pose "));
   Serial.println(pose_name);
 }
 
@@ -216,7 +216,7 @@ void setGrasp(float amount) {
       lerpf(kChannels[index].open_deg, kChannels[index].closed_deg, t)
     );
   }
-  Serial.print("ok grasp ");
+  Serial.print(F("ok grasp "));
   Serial.println(t, 3);
 }
 
@@ -233,7 +233,7 @@ void stopMotion() {
   for (size_t index = 0; index < SERVO_COUNT; index++) {
     kState[index].target_deg = kState[index].current_deg;
   }
-  Serial.println("ok stop");
+  Serial.println(F("ok stop"));
 }
 
 void freezeMotion() {
@@ -263,20 +263,20 @@ void enablePulseMode() {
 }
 
 void printHelp() {
-  Serial.println("ok commands ping status map attach detach home stop pose grasp set setall trim test pulse help");
+  Serial.println(F("ok commands ping status map attach detach home stop pose grasp set setall trim test pulse help"));
 }
 
 void printStatus() {
-  Serial.print("status moving=");
+  Serial.print(F("status moving="));
   Serial.print(anyMoving() ? 1 : 0);
   for (size_t index = 0; index < SERVO_COUNT; index++) {
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].name);
-    Serial.print("=");
+    Serial.print(F("="));
     Serial.print(kState[index].current_deg, 1);
-    Serial.print("/");
+    Serial.print(F("/"));
     Serial.print(kState[index].target_deg, 1);
-    Serial.print("@");
+    Serial.print(F("@"));
     Serial.print(kState[index].speed_deg_s, 1);
     Serial.print(kState[index].attached ? ":1" : ":0");
   }
@@ -284,57 +284,57 @@ void printStatus() {
 }
 
 void printMap() {
-  Serial.println("map name pin min_us max_us min_deg max_deg home open close invert trim");
+  Serial.println(F("map name pin min_us max_us min_deg max_deg home open close invert trim"));
   for (size_t index = 0; index < SERVO_COUNT; index++) {
-    Serial.print("map ");
+    Serial.print(F("map "));
     Serial.print(kChannels[index].name);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].pin);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].min_us);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].max_us);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].min_deg, 1);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].max_deg, 1);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].home_deg, 1);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].open_deg, 1);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].closed_deg, 1);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(kChannels[index].invert ? 1 : 0);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.println(kChannels[index].trim_deg, 1);
   }
 }
 
 void printPulseStatus() {
-  Serial.print("pulse enabled=");
+  Serial.print(F("pulse enabled="));
   Serial.print(kPulseMode.enabled ? 1 : 0);
-  Serial.print(" contract=");
+  Serial.print(F(" contract="));
   Serial.print(kPulseMode.contract_deg, 1);
-  Serial.print(" splay=");
+  Serial.print(F(" splay="));
   Serial.print(kPulseMode.splay_deg, 1);
-  Serial.print(" hold_ms=");
+  Serial.print(F(" hold_ms="));
   Serial.print(kPulseMode.hold_ms);
-  Serial.print(" speed=");
+  Serial.print(F(" speed="));
   Serial.print(kPulseMode.speed_deg_s, 1);
-  Serial.print(" phase=");
+  Serial.print(F(" phase="));
   switch (kPulseMode.phase) {
     case PULSE_MOVING_TO_CONTRACT:
-      Serial.println("moving_contract");
+      Serial.println(F("moving_contract"));
       return;
     case PULSE_HOLDING_CONTRACT:
-      Serial.println("holding_contract");
+      Serial.println(F("holding_contract"));
       return;
     case PULSE_MOVING_TO_SPLAY:
-      Serial.println("moving_splay");
+      Serial.println(F("moving_splay"));
       return;
     case PULSE_HOLDING_SPLAY:
-      Serial.println("holding_splay");
+      Serial.println(F("holding_splay"));
       return;
   }
 }
@@ -425,24 +425,24 @@ void handleSetCommand(char* save_ptr) {
   char* angle_text = strtok_r(nullptr, " ", &save_ptr);
   char* speed_text = strtok_r(nullptr, " ", &save_ptr);
   if (servo_name == nullptr || angle_text == nullptr) {
-    Serial.println("err usage set <servo> <deg> [speed_deg_s]");
+    Serial.println(F("err usage set <servo> <deg> [speed_deg_s]"));
     return;
   }
 
   int index = servoIndexFromName(servo_name);
   if (index < 0) {
-    Serial.println("err unknown servo");
+    Serial.println(F("err unknown servo"));
     return;
   }
 
   float target_deg = static_cast<float>(atof(angle_text));
   float speed_deg_s = speed_text == nullptr ? DEFAULT_SPEED_DEG_S : static_cast<float>(atof(speed_text));
   setTarget(static_cast<size_t>(index), target_deg, speed_deg_s);
-  Serial.print("ok set ");
+  Serial.print(F("ok set "));
   Serial.print(kChannels[index].name);
-  Serial.print(" ");
+  Serial.print(F(" "));
   Serial.print(kState[index].target_deg, 1);
-  Serial.print(" ");
+  Serial.print(F(" "));
   Serial.println(kState[index].speed_deg_s, 1);
 }
 
@@ -452,7 +452,7 @@ void handleSetAllCommand(char* save_ptr) {
   for (size_t index = 0; index < SERVO_COUNT; index++) {
     char* token = strtok_r(nullptr, " ", &save_ptr);
     if (token == nullptr) {
-      Serial.println("err usage setall <d0> <d1> <d2> <d3> <d4> [speed_deg_s]");
+      Serial.println(F("err usage setall <d0> <d1> <d2> <d3> <d4> [speed_deg_s]"));
       return;
     }
     values[index] = static_cast<float>(atof(token));
@@ -461,28 +461,28 @@ void handleSetAllCommand(char* save_ptr) {
   char* speed_text = strtok_r(nullptr, " ", &save_ptr);
   float speed_deg_s = speed_text == nullptr ? DEFAULT_SPEED_DEG_S : static_cast<float>(atof(speed_text));
   setAllTargets(values[0], values[1], values[2], values[3], values[4], speed_deg_s);
-  Serial.println("ok setall");
+  Serial.println(F("ok setall"));
 }
 
 void handleTrimCommand(char* save_ptr) {
   char* servo_name = strtok_r(nullptr, " ", &save_ptr);
   char* trim_text = strtok_r(nullptr, " ", &save_ptr);
   if (servo_name == nullptr || trim_text == nullptr) {
-    Serial.println("err usage trim <servo> <deg>");
+    Serial.println(F("err usage trim <servo> <deg>"));
     return;
   }
 
   int index = servoIndexFromName(servo_name);
   if (index < 0) {
-    Serial.println("err unknown servo");
+    Serial.println(F("err unknown servo"));
     return;
   }
 
   kChannels[index].trim_deg = clampf(static_cast<float>(atof(trim_text)), -30.0f, 30.0f);
   writeServoPhysical(static_cast<size_t>(index), kState[index].current_deg);
-  Serial.print("ok trim ");
+  Serial.print(F("ok trim "));
   Serial.print(kChannels[index].name);
-  Serial.print(" ");
+  Serial.print(F(" "));
   Serial.println(kChannels[index].trim_deg, 1);
 }
 
@@ -490,7 +490,7 @@ void handleTestCommand(char* save_ptr) {
   disablePulseMode();
   char* servo_name = strtok_r(nullptr, " ", &save_ptr);
   if (servo_name == nullptr) {
-    Serial.println("err usage test <servo|all>");
+    Serial.println(F("err usage test <servo|all>"));
     return;
   }
 
@@ -503,13 +503,13 @@ void handleTestCommand(char* save_ptr) {
     waitForMotion(3000);
     applyPose("home");
     waitForMotion(3000);
-    Serial.println("ok test all");
+    Serial.println(F("ok test all"));
     return;
   }
 
   int index = servoIndexFromName(servo_name);
   if (index < 0) {
-    Serial.println("err unknown servo");
+    Serial.println(F("err unknown servo"));
     return;
   }
 
@@ -519,7 +519,7 @@ void handleTestCommand(char* save_ptr) {
   waitForMotion(3000);
   setTarget(static_cast<size_t>(index), kChannels[index].home_deg, DEFAULT_TEST_SPEED_DEG_S);
   waitForMotion(3000);
-  Serial.print("ok test ");
+  Serial.print(F("ok test "));
   Serial.println(kChannels[index].name);
 }
 
@@ -532,14 +532,14 @@ void handlePulseCommand(char* save_ptr) {
 
   if (strcmp(subcommand, "on") == 0) {
     enablePulseMode();
-    Serial.println("ok pulse on");
+    Serial.println(F("ok pulse on"));
     return;
   }
 
   if (strcmp(subcommand, "off") == 0) {
     disablePulseMode();
     freezeMotion();
-    Serial.println("ok pulse off");
+    Serial.println(F("ok pulse off"));
     return;
   }
 
@@ -549,7 +549,7 @@ void handlePulseCommand(char* save_ptr) {
     char* hold_text = strtok_r(nullptr, " ", &save_ptr);
     char* speed_text = strtok_r(nullptr, " ", &save_ptr);
     if (contract_text == nullptr || splay_text == nullptr) {
-      Serial.println("err usage pulse set <contract_deg> <splay_deg> [hold_ms] [speed_deg_s]");
+      Serial.println(F("err usage pulse set <contract_deg> <splay_deg> [hold_ms] [speed_deg_s]"));
       return;
     }
     kPulseMode.contract_deg = static_cast<float>(atof(contract_text));
@@ -567,7 +567,7 @@ void handlePulseCommand(char* save_ptr) {
     return;
   }
 
-  Serial.println("err usage pulse <on|off|status|set>");
+  Serial.println(F("err usage pulse <on|off|status|set>"));
 }
 
 void handleLine(char* line) {
@@ -579,7 +579,7 @@ void handleLine(char* line) {
   if (command == nullptr) return;
 
   if (strcmp(command, "ping") == 0) {
-    Serial.println("pong");
+    Serial.println(F("pong"));
     return;
   }
   if (strcmp(command, "status") == 0) {
@@ -596,12 +596,12 @@ void handleLine(char* line) {
   }
   if (strcmp(command, "attach") == 0) {
     attachAll();
-    Serial.println("ok attach");
+    Serial.println(F("ok attach"));
     return;
   }
   if (strcmp(command, "detach") == 0) {
     detachAll();
-    Serial.println("ok detach");
+    Serial.println(F("ok detach"));
     return;
   }
   if (strcmp(command, "home") == 0) {
@@ -618,7 +618,7 @@ void handleLine(char* line) {
     disablePulseMode();
     char* pose_name = strtok_r(nullptr, " ", &save_ptr);
     if (pose_name == nullptr) {
-      Serial.println("err usage pose <open|pregrasp|close|home>");
+      Serial.println(F("err usage pose <open|pregrasp|close|home>"));
       return;
     }
     applyPose(pose_name);
@@ -628,7 +628,7 @@ void handleLine(char* line) {
     disablePulseMode();
     char* amount_text = strtok_r(nullptr, " ", &save_ptr);
     if (amount_text == nullptr) {
-      Serial.println("err usage grasp <0.0..1.0>");
+      Serial.println(F("err usage grasp <0.0..1.0>"));
       return;
     }
     setGrasp(static_cast<float>(atof(amount_text)));
@@ -655,7 +655,7 @@ void handleLine(char* line) {
     return;
   }
 
-  Serial.print("err unknown command ");
+  Serial.print(F("err unknown command "));
   Serial.println(command);
 }
 
@@ -675,7 +675,7 @@ void readSerialLines() {
       kLineBuffer[kLineLength++] = incoming;
     } else {
       kLineLength = 0;
-      Serial.println("err line too long");
+      Serial.println(F("err line too long"));
     }
   }
 }
@@ -687,10 +687,10 @@ void setup() {
   initializeState();
   attachAll();
   enablePulseMode();
-  Serial.println("ready hand-servo-controller");
-  Serial.println("wiring signal pins: thumb=3 index=5 middle=6 ring=9 pinky=10");
-  Serial.println("use external 5V/6V servo power and common ground");
-  Serial.println("default pulse: contract=10.0 deg, splay=145.0 deg, hold=5000 ms");
+  Serial.println(F("ready hand-servo-controller"));
+  Serial.println(F("wiring signal pins: thumb=3 index=5 middle=6 ring=9 pinky=10"));
+  Serial.println(F("use external 5V/6V servo power and common ground"));
+  Serial.println(F("default pulse: contract=10.0 deg, splay=145.0 deg, hold=5000 ms"));
   printHelp();
 }
 
